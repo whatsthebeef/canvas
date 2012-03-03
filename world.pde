@@ -13,7 +13,7 @@ void setup(){
 
 void draw(){
 
-    float rotation = radians(90);
+    float rotation = radians(45);
 
     background(255);
 
@@ -44,37 +44,39 @@ void leg(xpos, rotate){
     pushMatrix();
     positionedTranslate(cos(rotate)*xpos, 220, sin(rotate)*xpos);
     rotateY(rotate);
-    verticalPyramid(xpos, 10, -30);
+    verticalPyramid(10, 40);
+    // box(20, 40, 20)
     popMatrix();
 }
 
-void verticalPyramid(x, r, l){
+void verticalPyramid(r, l){
     beginShape();
 
-    positionedVertex(x-r, 0, x+r);
-    positionedVertex(x+r, 0, x+r);
-    positionedVertex(x, l, r);
+    positionedVertex(-r, -l/2, r);
+    positionedVertex(+r, -l/2, r);
+    positionedVertex(0, l/2, 0);
 
-    positionedVertex(x+r, 0, x+r);
-    positionedVertex(x+r, 0, x-r);
-    positionedVertex(x, l, r);
+    positionedVertex(+r, -l/2, +r);
+    positionedVertex(+r, -l/2, -r);
+    positionedVertex(0, l/2, 0);
 
-    positionedVertex(x+r, 0, x-r);
-    positionedVertex(x-r, 0, x-r);
-    positionedVertex(x, l, r);
+    positionedVertex(+r, -l/2, -r);
+    positionedVertex(-r, -l/2, -r);
+    positionedVertex(0, l/2, 0);
 
-    positionedVertex(x-r, 0, x-r);
-    positionedVertex(x-r, 0, x+r);
-    positionedVertex(x, l, r);
+    positionedVertex(-r, -l/2, -r);
+    positionedVertex(-r, -l/2, +r);
+    positionedVertex(0, l/2, 0);
 
     endShape();
 }
 
 void positionedVertex(x, y, z){
-    vertex(XPos + x, YPos - y, 0 + z); 
+    vertex(x, y, z); 
+    console.log("Triangular : " + (XPos + x), YPos - y, 0 + z);
 }
 
 void positionedTranslate(x, y, z){
-    positionedVertex(x, y, z);
+    translate(XPos + x, YPos - y, 0 + z);
 }
 
