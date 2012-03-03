@@ -1,48 +1,80 @@
 import processing.opengl.*;
 
-float r = 0.0;
-int l = 0.0;
+float XPos;
+float YPos;
+int r = 0;
 
 void setup(){
     size(600, 400, OPENGL);
+    noLoop();
+    XPos = width/2;
+    YPos = height;
 }
 
 void draw(){
 
+    float rotation = radians(90);
+
     background(255);
 
     pushMatrix();
-    translate(width/2, height - 300);
+    positionedTranslate(0, 300, 0);
     sphere(20);
     popMatrix();
 
     pushMatrix();
-    translate(width/2, height - 260);
-    rotateY(PI/4);
+    positionedTranslate(0, 260, 0);
+    rotateY(rotation);
     box(40, 40, 20);
     popMatrix();
 
-    l += 1;
-    pushMatrix();
-    translate(width/2 - 5, height - 220);
-    rotateY(PI/4);
-    box(10, 40, 10);
-    popMatrix();
-
-    pushMatrix();
-    translate(width/2 + 5, height - 220);
-    rotateY(PI/4);
-    box(10, 40, 10);
-    popMatrix();
+    leg(10, rotation);
+    leg(-10, rotation);
 
     r += 0.01;
     pushMatrix();
-    translate(width/2, height);
+    positionedTranslate(0, 0, 0);
     rotateX(r);
     sphere(200);
     popMatrix();
 
-    translate(width/2, height);
-    rotate(PI/4);
+}
+
+void leg(xpos, rotate){
+    pushMatrix();
+    positionedTranslate(cos(rotate)*xpos, 220, sin(rotate)*xpos);
+    rotateY(rotate);
+    verticalPyramid(xpos, 10, -30);
+    popMatrix();
+}
+
+void verticalPyramid(x, r, l){
+    beginShape();
+
+    positionedVertex(x-r, 0, x+r);
+    positionedVertex(x+r, 0, x+r);
+    positionedVertex(x, l, r);
+
+    positionedVertex(x+r, 0, x+r);
+    positionedVertex(x+r, 0, x-r);
+    positionedVertex(x, l, r);
+
+    positionedVertex(x+r, 0, x-r);
+    positionedVertex(x-r, 0, x-r);
+    positionedVertex(x, l, r);
+
+    positionedVertex(x-r, 0, x-r);
+    positionedVertex(x-r, 0, x+r);
+    positionedVertex(x, l, r);
+
+    endShape();
+}
+
+void positionedVertex(x, y, z){
+    vertex(XPos + x, YPos - y, 0 + z); 
+}
+
+void positionedTranslate(x, y, z){
+    positionedVertex(x, y, z);
 }
 
