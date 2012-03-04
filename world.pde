@@ -1,4 +1,3 @@
-import processing.opengl.*;
 
 float XPos;
 float YPos;
@@ -17,7 +16,7 @@ void setup(){
 
 void draw(){
 
-    float rotation = radians(90);
+    float rotation = radians(0);
 
     background(255);
     
@@ -25,8 +24,8 @@ void draw(){
 
     body(0, 260, 0, 40, 40, 20, #0000FF, rotation);
 
-    leg(10, 220, 10, rotation,#00FF00, v1, d1);
-    leg(-10, 220, -10, rotation,#00FF00, v2, d2);
+    leg(10, 220, 10, rotation, #00FF00, v1, d1);
+    leg(-10, 220, -10, rotation, #FF0000, v2, d2);
 
     world(0, 0, 0, 200, #FFFFFF, rotation);
 }
