@@ -2,7 +2,11 @@ import processing.opengl.*;
 
 float XPos;
 float YPos;
-int r = 0;
+float r = 0;
+int v1 = 0;
+int d1 = 1;
+int v2 = 0;
+int d2 = 1;
 
 void setup(){
     size(600, 400, OPENGL);
@@ -13,7 +17,7 @@ void setup(){
 
 void draw(){
 
-    float rotation = radians(0);
+    float rotation = radians(90);
 
     background(255);
     
@@ -21,8 +25,8 @@ void draw(){
 
     body(0, 260, 0, 40, 40, 20, #0000FF, rotation);
 
-    leg(-10, 220, -10, rotation,#00FF00);
-    leg(10, 220, 10, rotation, #FF0000);
+    leg(10, 220, 10, rotation,#00FF00, v1, d1);
+    leg(-10, 220, -10, rotation,#00FF00, v2, d2);
 
     world(0, 0, 0, 200, #FFFFFF, rotation);
 }
@@ -43,11 +47,12 @@ void body(xpos, ypos, zpos, xsize, ysize, zsize, color, rotate){
     popMatrix();
 }
 
-void leg(xpos, ypos, zpos, rotate, color){
+void leg(xpos, ypos, zpos, rotate, color, v, d){
+    fill(color);
     pushMatrix();
     positionedTranslate(cos(-rotate)*xpos, ypos, sin(-rotate)*zpos);
     rotateY(rotate);
-    verticalPyramid(10, 40, color);
+    verticalPyramid(10, 40, v, d);
     popMatrix();
 }
 
@@ -62,28 +67,31 @@ void world(xpos, ypos, zpos, rsize, color, rotate){
     popMatrix();
 }
 
-void verticalPyramid(r, l, color){
+void verticalPyramid(r, l, lv, ld){
+    
+    s = 5;
+    if(lv >= 20 || lv <= -20){
+        ld *= -1;
+    }
+    lv += s*ld;
+
     beginShape();
 
-    fill(color);
     positionedVertex(-r, -l/2, r);
     positionedVertex(+r, -l/2, r);
-    positionedVertex(0, l/2, 0);
+    positionedVertex(0, l/2, lv);
     
-    fill(color);
     positionedVertex(+r, -l/2, +r);
     positionedVertex(+r, -l/2, -r);
-    positionedVertex(0, l/2, 0);
+    positionedVertex(0, l/2, lv);
 
-    fill(color);
     positionedVertex(+r, -l/2, -r);
     positionedVertex(-r, -l/2, -r);
-    positionedVertex(0, l/2, 0);
+    positionedVertex(0, l/2, lv);
 
-    fill(color);
     positionedVertex(-r, -l/2, -r);
     positionedVertex(-r, -l/2, +r);
-    positionedVertex(0, l/2, 0);
+    positionedVertex(0, l/2, lv);
 
     endShape();
 }
