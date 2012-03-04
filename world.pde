@@ -6,42 +6,31 @@ int r = 0;
 
 void setup(){
     size(600, 400, OPENGL);
-    noLoop();
+    frameRate(3);
     XPos = width/2;
     YPos = height;
 }
 
 void draw(){
 
-    float rotation = radians(45);
+    float rotation = radians(0);
 
     background(255);
-
-    pushMatrix();
-    positionedTranslate(0, 300, 0);
-    sphere(20);
-    popMatrix();
+    
+    head(0, 300, 0, 20);
 
     body(0, 260, 0, 40, 40, 20, #0000FF, rotation);
 
     leg(-10, 220, -10, rotation,#00FF00);
     leg(10, 220, 10, rotation, #FF0000);
 
-    r += 0.01;
-    noFill();
-    pushMatrix();
-    positionedTranslate(0, 0, 0);
-    rotateX(r);
-    sphere(200);
-    popMatrix();
-
+    world(0, 0, 0, 200, #FFFFFF, rotation);
 }
 
-void leg(xpos, ypos, zpos, rotate, color){
+void head(xpos, ypos, zpos, rsize){
     pushMatrix();
-    positionedTranslate(cos(-rotate)*xpos, ypos, sin(-rotate)*zpos);
-    rotateY(rotate);
-    verticalPyramid(10, 40, color);
+    positionedTranslate(xpos, ypos, zpos);
+    sphere(rsize);
     popMatrix();
 }
 
@@ -54,6 +43,25 @@ void body(xpos, ypos, zpos, xsize, ysize, zsize, color, rotate){
     popMatrix();
 }
 
+void leg(xpos, ypos, zpos, rotate, color){
+    pushMatrix();
+    positionedTranslate(cos(-rotate)*xpos, ypos, sin(-rotate)*zpos);
+    rotateY(rotate);
+    verticalPyramid(10, 40, color);
+    popMatrix();
+}
+
+void world(xpos, ypos, zpos, rsize, color, rotate){
+    fill(color);
+    r += 0.01;
+    pushMatrix();
+    positionedTranslate(xpos, ypos, zpos);
+    rotateX(cos(rotate)*r);
+    rotateZ(sin(rotate)*r);
+    sphere(rsize);
+    popMatrix();
+}
+
 void verticalPyramid(r, l, color){
     beginShape();
 
@@ -61,7 +69,6 @@ void verticalPyramid(r, l, color){
     positionedVertex(-r, -l/2, r);
     positionedVertex(+r, -l/2, r);
     positionedVertex(0, l/2, 0);
-
     
     fill(color);
     positionedVertex(+r, -l/2, +r);
