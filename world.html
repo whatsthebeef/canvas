@@ -26,13 +26,13 @@ function sketchProc(p){
 
     p.draw = function(){
 
-        var rotation = p.radians(0);
+        var rotation = p.radians(45);
 
         p.background(255);
 
         head(0, 300, 0, 20);
 
-        // body(0, 260, 0, 40, 40, 20, 80, rotation);
+        body(0, 260, 0, 40, 40, 20, 80, rotation);
 
         leg(10, 220, 10, rotation, 180);
         leg(-10, 220, -10, rotation, 100);
@@ -62,7 +62,6 @@ function sketchProc(p){
         p.pushMatrix();
         positionedTranslate(p.cos(-rotate)*xpos, ypos, p.sin(-rotate)*zpos);
         p.rotateY(rotate);
-        p.rotateX(-45);
         verticalPyramid(10, 40);
         p.popMatrix();
     }
@@ -110,12 +109,14 @@ function sketchProc(p){
         p.translate(XPos + x, YPos - y, 0 + z);
     }
 
-    var linkedVertex = function(xpos, ypos, zpos){
+    var linkedVertex = function(xpos, ypos, zpos, vname){
+        var vname = vname || "default";
         var x = xpos;
         var y = ypos;
         var z = zpos;
         var _joins = [];
         return {
+            name : vname,
             joins : function(){
                 return _joins;
             },
@@ -130,13 +131,15 @@ function sketchProc(p){
 
     var shape = function(vertices){
         p.beginShape();
-        // cycle through joins of current vertices
+        // draw first point
+        draw(vertices[0]);
         (function recursiveDraw(vertex){
-         vertexJoins = vertex.joins();
+         var vertexJoins = vertex.joins();
          if(vertexJoins.length > 0){
+            // cycle through joins of current vertices
              vertexJoins.forEach(function(element, index, arr){
                 // if joined vertex has been processed we don't need to do it again
-                element.draw();
+                draw(element);
                 // remove the line we are about to draw
                 arr.removeAtIndex(index);
                 // Need to remove vertex from next element so it won't redraw this line
@@ -146,8 +149,10 @@ function sketchProc(p){
          }
          else{
             vertices.remove(vertex);
-            nextVertex = vertices.pop();
+            var nextVertex = vertices.pop();
             if(nextVertex != undefined){
+                // draw new vertex so you get
+                draw(nextVertex);
                 recursiveDraw(nextVertex);
             }
          }
@@ -156,12 +161,17 @@ function sketchProc(p){
         p.endShape();
     }
 
+    var draw = function(element){
+        // console.log(element.name);
+        element.draw();
+    }
+
     var verticalPyramid = function(r, l){
-        var point = linkedVertex(0, l/2, 0);
-        var b1 = linkedVertex(+r, -l/2, -r);
-        var b2 = linkedVertex(+r, -l/2, +r);
-        var b3 = linkedVertex(-r, -l/2, +r);
-        var b4 = linkedVertex(-r, -l/2, -r);
+        var point = linkedVertex(0, l/2, 0, "point");
+        var b1 = linkedVertex(+r, -l/2, -r, "b1");
+        var b2 = linkedVertex(+r, -l/2, +r, "b2");
+        var b3 = linkedVertex(-r, -l/2, +r, "b3");
+        var b4 = linkedVertex(-r, -l/2, -r, "b4");
         point.setJoins([b1, b2, b3, b4]);
         b1.setJoins([point, b4, b2]);
         b2.setJoins([point, b1, b3]);
