@@ -19,13 +19,14 @@ function sketchProc(p){
 
     p.setup = function(){
         p.size(600, 400, p.OPENGL);
+        p.noLoop();
         XPos = p.width/2;
         YPos = p.height;
     };
 
     p.draw = function(){
 
-        var rotation = p.radians(45);
+        var rotation = p.radians(0);
 
         p.background(255);
 
@@ -60,8 +61,8 @@ function sketchProc(p){
         p.fill(color);
         p.pushMatrix();
         positionedTranslate(p.cos(-rotate)*xpos, ypos, p.sin(-rotate)*zpos);
-        p.rotateX(rotate);
         p.rotateY(rotate);
+        p.rotateX(-45);
         verticalPyramid(10, 40);
         p.popMatrix();
     }
@@ -131,20 +132,29 @@ function sketchProc(p){
         p.beginShape();
         // cycle through joins of current vertices
         (function recursiveDraw(vertex){
-         // remove join between previous veretx
-         vertex.joins().forEach(function(element, index, arr){
-             // if joined vertex has been processed we don't need to do it again
-             element.draw();
-             // Need to remove vertex from next element so it won't redraw this line
-             element.joins().remove(vertex);
-             // remove the line we are about to draw
-             arr.removeAtIndex(index);
-             recursiveDraw(element);
+         vertexJoins = vertex.joins();
+         if(vertexJoins.length > 0){
+             vertexJoins.forEach(function(element, index, arr){
+                // if joined vertex has been processed we don't need to do it again
+                element.draw();
+                // remove the line we are about to draw
+                arr.removeAtIndex(index);
+                // Need to remove vertex from next element so it won't redraw this line
+                element.joins().remove(vertex);
+                recursiveDraw(element);
              });
+         }
+         else{
+            vertices.remove(vertex);
+            nextVertex = vertices.pop();
+            if(nextVertex != undefined){
+                recursiveDraw(nextVertex);
+            }
+         }
          })(vertices[0]);
 
         p.endShape();
-}
+    }
 
     var verticalPyramid = function(r, l){
         var point = linkedVertex(0, l/2, 0);
