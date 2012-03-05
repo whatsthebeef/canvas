@@ -1,40 +1,198 @@
 <?xml version="1.0"?>
 <html>
-  <head>
-    <script src="js/jquery-1.7.1.js">
-    </script>
-    <script src="js/processing-1.3.6.js">
-    </script>
-    <script>
-    
-    function sketchProc(p){
+<head>
+<script src="js/jquery-1.7.1.js">
+</script>
+<script src="js/processing-1.3.6.js">
+</script>
+<script>
 
-        p.setup = function(){
-            p.size(100, 100, p.P3D);
-        };
+function sketchProc(p){
 
-        p.draw = function(){
-            p.background(200);
-            p.stroke(255, 50);
-            p.translate(50, 50, 0);
-            p.rotateY(p.mouseY * 0.05);
-            p.rotateX(p.mouseX * 0.05);
-            p.fill(p.mouseX * 2, 0, 160);
-            p.sphereDetail(p.mouseX / 4);
-            p.sphere(40);
-        };
+    var XPos = 0.0;
+    var YPos = 0.0;
+    var r = 0.0;
+    var v1 = 0;
+    var d1 = 1;
+    var v2 = 0;
+    var d2 = 1;
 
+    p.setup = function(){
+        p.size(600, 400, p.OPENGL);
+        XPos = p.width/2;
+        YPos = p.height;
+    };
+
+    p.draw = function(){
+
+        var rotation = p.radians(45);
+
+        p.background(255);
+
+        head(0, 300, 0, 20);
+
+        // body(0, 260, 0, 40, 40, 20, 80, rotation);
+
+        leg(10, 220, 10, rotation, 180);
+        leg(-10, 220, -10, rotation, 100);
+
+        world(0, 0, 0, 200, 255, rotation);
     }
 
-    $(document).ready(function(){
+
+    var head = function(xpos, ypos, zpos, rsize){
+        p.pushMatrix();
+        positionedTranslate(xpos, ypos, zpos);
+        p.sphere(rsize);
+        p.popMatrix();
+    }
+
+    var body = function(xpos, ypos, zpos, xsize, ysize, zsize, color, rotate){
+        p.fill(color);
+        p.pushMatrix();
+        positionedTranslate(xpos, ypos, zpos);
+        p.rotateY(rotate);
+        p.box(xsize, ysize, zsize);
+        p.popMatrix();
+    }
+
+    var leg = function(xpos, ypos, zpos, rotate, color){
+        p.fill(color);
+        p.pushMatrix();
+        positionedTranslate(p.cos(-rotate)*xpos, ypos, p.sin(-rotate)*zpos);
+        p.rotateX(rotate);
+        p.rotateY(rotate);
+        verticalPyramid(10, 40);
+        p.popMatrix();
+    }
+
+    var world = function(xpos, ypos, zpos, rsize, color, rotate){
+        p.fill(color);
+        r += 0.01;
+        p.pushMatrix();
+        positionedTranslate(xpos, ypos, zpos);
+        p.rotateX(p.cos(rotate)*r);
+        p.rotateZ(p.sin(rotate)*r);
+        p.sphere(rsize);
+        p.popMatrix();
+    }
+
+
+    var verticalPyramiddep = function(r, l){
+
+        p.beginShape();
+
+        positionedVertex(-r, -l/2, +r);
+        positionedVertex(+r, -l/2, -r);
+        positionedVertex(0, l/2, 0);
+
+        positionedVertex(+r, -l/2, +r);
+        positionedVertex(+r, -l/2, -r);
+        positionedVertex(0, l/2, 0);
+
+        positionedVertex(+r, -l/2, -r);
+        positionedVertex(-r, -l/2, -r);
+        positionedVertex(0, l/2, 0);
+
+        positionedVertex(-r, -l/2, -r);
+        positionedVertex(-r, -l/2, +r);
+        positionedVertex(0, l/2, 0);
+
+        p.endShape();
+    }
+
+    var positionedVertex = function(x, y, z){
+        p.vertex(x, y, z); 
+    }
+
+    var positionedTranslate = function(x, y, z){
+        p.translate(XPos + x, YPos - y, 0 + z);
+    }
+
+    var linkedVertex = function(xpos, ypos, zpos){
+        var x = xpos;
+        var y = ypos;
+        var z = zpos;
+        var _joins = [];
+        return {
+            joins : function(){
+                return _joins;
+            },
+            setJoins : function(joinsArray){
+                _joins = joinsArray;
+            }, 
+            draw : function(){
+                p.vertex(x, y, z); 
+            }
+        };
+    };
+
+    var shape = function(vertices){
+        p.beginShape();
+        // cycle through joins of current vertices
+        (function recursiveDraw(vertex){
+         // remove join between previous veretx
+         vertex.joins().forEach(function(element, index, arr){
+             // if joined vertex has been processed we don't need to do it again
+             element.draw();
+             // Need to remove vertex from next element so it won't redraw this line
+             element.joins().remove(vertex);
+             // remove the line we are about to draw
+             arr.removeAtIndex(index);
+             recursiveDraw(element);
+             });
+         })(vertices[0]);
+
+        p.endShape();
+}
+
+    var verticalPyramid = function(r, l){
+        var point = linkedVertex(0, l/2, 0);
+        var b1 = linkedVertex(+r, -l/2, -r);
+        var b2 = linkedVertex(+r, -l/2, +r);
+        var b3 = linkedVertex(-r, -l/2, +r);
+        var b4 = linkedVertex(-r, -l/2, -r);
+        point.setJoins([b1, b2, b3, b4]);
+        b1.setJoins([point, b4, b2]);
+        b2.setJoins([point, b1, b3]);
+        b3.setJoins([point, b2, b4]);
+        b4.setJoins([point, b3, b1]);
+        shape([point, b1, b2, b3, b4]);
+    }    
+
+    if (!Array.prototype.contains) {  
+       Array.prototype.contains = function(object) {  
+           return this.indexOf(object) != -1 ? true : false;        
+       };
+    }
+
+    if (!Array.prototype.remove) {  
+        Array.prototype.remove = function(object) {  
+            var removeIndex = this.indexOf(object);
+            if(removeIndex != -1){
+                return this.splice(removeIndex, 1)[0]; 
+            }
+            return null;
+        };
+    };
+
+    if (!Array.prototype.removeAtIndex) {  
+        Array.prototype.removeAtIndex = function(index) {  
+           return this.splice(index, 1)[0]; 
+        };
+    };
+
+}
+
+$(document).ready(function(){
         var canvas = $("#canvas")[0];
         var sketch = new Processing.Sketch(sketchProc);
         var processingInstance = new Processing(canvas, sketch);
-    });
+        });
 
-    </script>
-  </head>
-  <body>
-    <canvas id="canvas"> </canvas>
-  </body>
+</script>
+</head>
+<body>
+<canvas id="canvas"> </canvas>
+</body>
 </html>
