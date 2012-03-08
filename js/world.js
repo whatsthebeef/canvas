@@ -32,7 +32,7 @@ function sketchProc(p){
     var d2 = 1;
     var zpoint = 0;
 
-    var rotation = p.radians(45);
+    var rotation = p.radians(0);
 
     var rightLeg = new Leg(10, 220, 10, rotation, 180);
     var leftLeg = new Leg(-10, 220, -10, rotation, 100);
@@ -53,7 +53,7 @@ function sketchProc(p){
 
         body.draw();
 
-        rightLeg.draw();
+        rightLeg.step();
         leftLeg.draw();
 
         world(0, 0, 0, 200, 255, rotation);
@@ -93,14 +93,23 @@ function sketchProc(p){
         var _ypos = ypos;
         var _zpos = zpos;
         var _rotate = rotate;
-        var vp = new VerticalPyramid(10, 40);
+        var _vp = new VerticalPyramid(10, 40);
 
         this.draw = function(){
             p.fill(_colour);
             p.pushMatrix();
             positionedTranslate(p.cos(-rotate)*_xpos, _ypos, p.sin(-rotate)*_zpos);
             p.rotateY(_rotate);
-            vp.draw();
+            _vp.draw();
+            p.popMatrix();
+        }
+
+        this.step = function(){
+            p.fill(_colour);
+            p.pushMatrix();
+            positionedTranslate(p.cos(-rotate)*_xpos, _ypos, p.sin(-rotate)*_zpos);
+            p.rotateY(_rotate);
+            _vp.rotatePointX();
             p.popMatrix();
         }
 
@@ -122,13 +131,13 @@ function sketchProc(p){
     }
 
     function linkedVertex(xpos, ypos, zpos, vname){
-        var vname = vname || "default";
+        var _vname = vname || "default";
         var _xpos = xpos;
         var _ypos = ypos;
         var _zpos = zpos;
         var _joins = [];
         return {
-            name : vname,
+            name : _vname,
                  joins : function(){
                      return _joins;
                  },
@@ -136,7 +145,7 @@ function sketchProc(p){
                                 _joins = joinsArray;
                             }, 
                  draw : function(){
-                            // console.log(element.name);
+                            // console.log(_vname);
                             p.vertex(_xpos, _ypos, _zpos); 
                         },
                  move : function(dx, dy, dz){
@@ -148,7 +157,7 @@ function sketchProc(p){
                               _x = xopos + radius*p.cos(azimuthrad)*p.sin(zenithrad);
                               _y = yopos + radius*p.sin(azimuthrad)*p.sin(zenithrad);
                               _z = zopos + radius*p.cos(zenithrad);
-                          },
+                        },
                  rotateX : function(degrees, radius){
                            },
                  rotateY : function(){
@@ -177,6 +186,9 @@ function sketchProc(p){
             (function recursiveDraw(vertex){
                 var vertexJoins = vertex.joins();
                 if(vertexJoins.length > 0){
+                    // save joins so they can be restored fter cyling through and eliminating
+                    // processed joins
+                    var vertexJoinsCopy = vertexJoins.slice(0);
                     // cycle through joins of current vertices
                     vertexJoins.forEach(function(element, index, arr){
                         // if joined vertex has been processed we don't need to do it again
@@ -187,6 +199,9 @@ function sketchProc(p){
                         element.joins().remove(vertex);
                         recursiveDraw(element);
                     });
+                    // replace with copy of joins as actual joins have all been removed
+                    // during processing
+                    vertex.setJoins(vertexJoinsCopy);
                 }
                 else{
                     vertices.remove(vertex);
