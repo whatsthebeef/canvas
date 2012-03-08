@@ -1,3 +1,26 @@
+
+if (!Array.prototype.contains) {  
+    Array.prototype.contains = function(object) {  
+        return this.indexOf(object) != -1 ? true : false;        
+    };
+}
+
+if (!Array.prototype.remove) {  
+    Array.prototype.remove = function(object) {  
+        var removeIndex = this.indexOf(object);
+        if(removeIndex != -1){
+            return this.splice(removeIndex, 1)[0]; 
+        }
+        return null;
+    };
+};
+
+if (!Array.prototype.removeAtIndex) {  
+    Array.prototype.removeAtIndex = function(index) {  
+        return this.splice(index, 1)[0]; 
+    };
+};
+
 function sketchProc(p){
 
     var XPos = 0.0;
@@ -9,16 +32,19 @@ function sketchProc(p){
     var d2 = 1;
     var zpoint = 0;
 
+    var rotation = p.radians(45);
+
+    var rightLeg = new Leg(10, 220, 10, rotation, 180);
+    var leftLeg = new Leg(-10, 220, -10, rotation, 100);
+
     p.setup = function(){
         p.size(600, 400, p.OPENGL);
-        p.frameRate(3);
+        p.frameRate(1);
         XPos = p.width/2;
         YPos = p.height;
     };
 
     p.draw = function(){
-
-        var rotation = p.radians(45);
 
         p.background(255);
 
@@ -26,8 +52,8 @@ function sketchProc(p){
 
         body(0, 260, 0, 40, 40, 20, 80, rotation);
 
-        leg(10, 220, 10, rotation, 180);
-        leg(-10, 220, -10, rotation, 100);
+        rightLeg.draw();
+        leftLeg.draw();
 
         world(0, 0, 0, 200, 255, rotation);
     }
@@ -49,13 +75,20 @@ function sketchProc(p){
         p.popMatrix();
     }
 
-    var leg = function(xpos, ypos, zpos, rotate, color){
+    function Leg(xpos, ypos, zpos, rotate, color){
         p.fill(color);
         p.pushMatrix();
         positionedTranslate(p.cos(-rotate)*xpos, ypos, p.sin(-rotate)*zpos);
-        p.rotateY(rotate);
-        new VerticalPyramid(10, 40).draw();
+        vp = new VerticalPyramid(10, 40).draw();
         p.popMatrix();
+
+        function draw(){
+            vp.draw();
+        }
+
+        function position(){
+            p.rotateY(rotate);
+        }
     }
 
     var world = function(xpos, ypos, zpos, rsize, color, rotate){
@@ -73,11 +106,7 @@ function sketchProc(p){
         p.vertex(x, y, z); 
     }
 
-    var positionedTranslate = function(x, y, z){
-        p.translate(XPos + x, YPos - y, 0 + z);
-    }
-
-    var linkedVertex = function(xpos, ypos, zpos, vname){
+    function linkedVertex(xpos, ypos, zpos, vname){
         var vname = vname || "default";
         var _xpos = xpos;
         var _ypos = ypos;
@@ -85,80 +114,81 @@ function sketchProc(p){
         var _joins = [];
         return {
             name : vname,
-            joins : function(){
-                return _joins;
-            },
-            setJoins : function(joinsArray){
-                _joins = joinsArray;
-            }, 
-            draw : function(){
-                p.vertex(_xpos, _ypos, _zpos); 
-            },
-            move : function(dx, dy, dz){
-                _x = xpos + dx;
-                _y = ypos + dy;
-                _z = zpos + dz;
-                this.draw();
-            },
-            rotate : function(){
-            },
-            rotateX : function(degrees, radius){
-            },
-            rotateY : function(){
-            },
-            rotateZ : function(){
-            }
-                      
+                 joins : function(){
+                     return _joins;
+                 },
+                 setJoins : function(joinsArray){
+                                _joins = joinsArray;
+                            }, 
+                 draw : function(){
+                            // console.log(element.name);
+                            p.vertex(_xpos, _ypos, _zpos); 
+                        },
+                 move : function(dx, dy, dz){
+                            _x = xpos + dx;
+                            _y = ypos + dy;
+                            _z = zpos + dz;
+                        },
+                 rotate : function(xopos, yopos, zopos, radius, zenithrad, azimuthrad){
+                              _x = xopos + radius*p.cos(azimuthrad)*p.sin(zenithrad);
+                              _y = yopos + radius*p.sin(azimuthrad)*p.sin(zenithrad);
+                              _z = zopos + radius*p.cos(zenithrad);
+                          },
+                 rotateX : function(degrees, radius){
+                           },
+                 rotateY : function(){
+                           },
+                 rotateZ : function(){
+                           }
         };
     };
+
+    function positionedTranslate(x, y, z){
+        p.translate(XPos + x, YPos - y, 0 + z);
+    }
 
     function Shape(vertices){
 
         var self = this;
-        
+
         this._vertices = vertices; 
 
         this.draw = function(){
 
             p.beginShape();
             // draw first point
-            doDraw(self._vertices[0]);
+            self._vertices[0].draw();
             (function recursiveDraw(vertex){
-               var vertexJoins = vertex.joins();
-               if(vertexJoins.length > 0){
-                  // cycle through joins of current vertices
-                   vertexJoins.forEach(function(element, index, arr){
-                      // if joined vertex has been processed we don't need to do it again
-                      doDraw(element);
-                      // remove the line we are about to draw
-                      arr.removeAtIndex(index);
-                      // Need to remove vertex from next element so it won't redraw this line
-                      element.joins().remove(vertex);
-                      recursiveDraw(element);
-                   });
-               }
-               else{
-                  vertices.remove(vertex);
-                  var nextVertex = self._vertices.pop();
-                  if(nextVertex != undefined){
-                      // draw new vertex so you get
-                      doDraw(nextVertex);
-                      recursiveDraw(nextVertex);
-                  }
-               }
+                var vertexJoins = vertex.joins();
+                if(vertexJoins.length > 0){
+                    // cycle through joins of current vertices
+                    vertexJoins.forEach(function(element, index, arr){
+                        // if joined vertex has been processed we don't need to do it again
+                        element.draw();
+                        // remove the line we are about to draw
+                        arr.removeAtIndex(index);
+                        // Need to remove vertex from next element so it won't redraw this line
+                        element.joins().remove(vertex);
+                        recursiveDraw(element);
+                    });
+                }
+                else{
+                    vertices.remove(vertex);
+                    var nextVertex = self._vertices.pop();
+                    if(nextVertex != undefined){
+                        // draw new vertex so you get
+                        nextVertex.draw();
+                        recursiveDraw(nextVertex);
+                    }
+                }
             })(self._vertices[0]);
 
             p.endShape();
         }
 
         function moveVertex(vertexIndex, dx, dy, dz){
-           self._vertices[vertexIndex].move(dx, dy, dz);
+            self._vertices[vertexIndex].move(dx, dy, dz);
         }
-    }
-
-    var doDraw = function(element){
-        // console.log(element.name);
-        element.draw();
     }
 
     function VerticalPyramid(r, l){
@@ -181,30 +211,9 @@ function sketchProc(p){
         }
 
         this.rotatePointX = function(){
+            point.rotate(0, -l/2, 0, l, 90, 90);  
+            shape.draw();
         }
     }    
-
-    if (!Array.prototype.contains) {  
-       Array.prototype.contains = function(object) {  
-           return this.indexOf(object) != -1 ? true : false;        
-       };
-    }
-
-    if (!Array.prototype.remove) {  
-        Array.prototype.remove = function(object) {  
-            var removeIndex = this.indexOf(object);
-            if(removeIndex != -1){
-                return this.splice(removeIndex, 1)[0]; 
-            }
-            return null;
-        };
-    };
-
-    if (!Array.prototype.removeAtIndex) {  
-        Array.prototype.removeAtIndex = function(index) {  
-           return this.splice(index, 1)[0]; 
-        };
-    };
-
 }
 
