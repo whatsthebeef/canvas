@@ -36,6 +36,7 @@ function sketchProc(p){
 
     var rightLeg = new Leg(10, 220, 10, rotation, 180);
     var leftLeg = new Leg(-10, 220, -10, rotation, 100);
+    var body = new Body(0, 260, 0, 40, 40, 20, 80, rotation);
 
     p.setup = function(){
         p.size(600, 400, p.OPENGL);
@@ -50,7 +51,7 @@ function sketchProc(p){
 
         head(0, 300, 0, 20);
 
-        body(0, 260, 0, 40, 40, 20, 80, rotation);
+        body.draw();
 
         rightLeg.draw();
         leftLeg.draw();
@@ -66,29 +67,43 @@ function sketchProc(p){
         p.popMatrix();
     }
 
-    var body = function(xpos, ypos, zpos, xsize, ysize, zsize, color, rotate){
-        p.fill(color);
-        p.pushMatrix();
-        positionedTranslate(xpos, ypos, zpos);
-        p.rotateY(rotate);
-        p.box(xsize, ysize, zsize);
-        p.popMatrix();
+    function Body(xpos, ypos, zpos, xsize, ysize, zsize, colour, rotate){
+        var _colour = colour;
+        var _xpos = xpos;
+        var _ypos = ypos;
+        var _zpos = zpos;
+        var _xsize = xsize;
+        var _ysize = ysize;
+        var _zsize = zsize;
+        var _rotate = rotate;
+
+        this.draw = function(){
+            p.fill(_colour);
+            p.pushMatrix();
+            positionedTranslate(_xpos, _ypos, _zpos);
+            p.rotateY(_rotate);
+            p.box(_xsize, _ysize, _zsize);
+            p.popMatrix();
+        }
     }
 
-    function Leg(xpos, ypos, zpos, rotate, color){
-        p.fill(color);
-        p.pushMatrix();
-        positionedTranslate(p.cos(-rotate)*xpos, ypos, p.sin(-rotate)*zpos);
-        vp = new VerticalPyramid(10, 40).draw();
-        p.popMatrix();
+    function Leg(xpos, ypos, zpos, rotate, colour){
+        var _colour = colour;
+        var _xpos = xpos;
+        var _ypos = ypos;
+        var _zpos = zpos;
+        var _rotate = rotate;
+        var vp = new VerticalPyramid(10, 40);
 
-        function draw(){
+        this.draw = function(){
+            p.fill(_colour);
+            p.pushMatrix();
+            positionedTranslate(p.cos(-rotate)*_xpos, _ypos, p.sin(-rotate)*_zpos);
+            p.rotateY(_rotate);
             vp.draw();
+            p.popMatrix();
         }
 
-        function position(){
-            p.rotateY(rotate);
-        }
     }
 
     var world = function(xpos, ypos, zpos, rsize, color, rotate){
@@ -149,15 +164,16 @@ function sketchProc(p){
 
     function Shape(vertices){
 
-        var self = this;
-
-        this._vertices = vertices; 
+        var _vertices = vertices; 
 
         this.draw = function(){
 
+            // need to make mutable copy so I can remove elements when processed
+            var vertices = _vertices.slice(0);
+
             p.beginShape();
             // draw first point
-            self._vertices[0].draw();
+            vertices[0].draw();
             (function recursiveDraw(vertex){
                 var vertexJoins = vertex.joins();
                 if(vertexJoins.length > 0){
@@ -174,20 +190,20 @@ function sketchProc(p){
                 }
                 else{
                     vertices.remove(vertex);
-                    var nextVertex = self._vertices.pop();
+                    var nextVertex = vertices.pop();
                     if(nextVertex != undefined){
                         // draw new vertex so you get
                         nextVertex.draw();
                         recursiveDraw(nextVertex);
                     }
                 }
-            })(self._vertices[0]);
+            })(vertices[0]);
 
             p.endShape();
         }
 
         function moveVertex(vertexIndex, dx, dy, dz){
-            self._vertices[vertexIndex].move(dx, dy, dz);
+            _vertices[vertexIndex].move(dx, dy, dz);
         }
     }
 
