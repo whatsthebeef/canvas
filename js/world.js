@@ -149,21 +149,24 @@ function sketchProc(p){
                             p.vertex(_xpos, _ypos, _zpos); 
                         },
                  move : function(dx, dy, dz){
-                            _x = xpos + dx;
-                            _y = ypos + dy;
-                            _z = zpos + dz;
+                            _xpos = xpos + dx;
+                            _ypos = ypos + dy;
+                            _zpos = zpos + dz;
                         },
                  rotate : function(xopos, yopos, zopos, radius, zenithrad, azimuthrad){
-                              _x = xopos + radius*p.cos(azimuthrad)*p.sin(zenithrad);
-                              _y = yopos + radius*p.sin(azimuthrad)*p.sin(zenithrad);
-                              _z = zopos + radius*p.cos(zenithrad);
+                              _xpos = xopos + radius*p.cos(azimuthrad)*p.sin(zenithrad);
+                              _ypos = yopos + radius*p.sin(azimuthrad)*p.sin(zenithrad);
+                              _zpos = zopos + radius*p.cos(zenithrad);
                         },
-                 rotateX : function(degrees, radius){
-                           },
-                 rotateY : function(){
-                           },
-                 rotateZ : function(){
-                           }
+                 rotateX : function(xopos, yopos, zopos, radius, zenithrad){
+                              this.rotate(xopos, yopos, zopos, radius, zenithrad, p.PI/2);
+                        },
+                 rotateY : function(xopos, yopos, zopos, radius, azimuthrad){
+                              this.rotate(xopos, yopos, zopos, radius, 0, azimuthrad);
+                        },
+                 rotateZ : function(xopos, yopos, zopos, radius, zenithrad){
+                              this.rotate(xopos, yopos, zopos, radius, p.PI/2, zenithrad);
+                        }
         };
     };
 
@@ -242,7 +245,7 @@ function sketchProc(p){
         }
 
         this.rotatePointX = function(){
-            point.rotate(0, -l/2, 0, l, 90, 90);  
+            point.rotateZ(0, -l/2, 0, l, p.PI/4);  
             shape.draw();
         }
     }    
