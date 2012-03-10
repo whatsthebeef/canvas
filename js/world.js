@@ -162,7 +162,7 @@ function sketchProc(p){
             // draw first point
             vertices[0].draw();
             (function recursiveDraw(vertex){
-                var vertexJoins = vertex.joins();
+                var vertexJoins = vertex.joins;
                 if(vertexJoins.length > 0){
                     // save joins so they can be restored fter cyling through and eliminating
                     // processed joins
@@ -174,12 +174,12 @@ function sketchProc(p){
                         // remove the line we are about to draw
                         arr.removeAtIndex(index);
                         // Need to remove vertex from next element so it won't redraw this line
-                        element.joins().remove(vertex);
+                        element.joins.remove(vertex);
                         recursiveDraw(element);
                     });
                     // replace with copy of joins as actual joins have all been removed
                     // during processing
-                    vertex.setJoins(vertexJoinsCopy);
+                    vertex.joins = vertexJoinsCopy;
                 }
                 else{
                     vertices.remove(vertex);
@@ -268,67 +268,40 @@ function sketchProc(p){
     };
 
 
-    function linkedVertex(xpos, ypos, zpos, vname){
-        var _vname = vname || "default";
-        var _xpos = xpos;
-        var _ypos = ypos;
-        var _zpos = zpos;
-        var _joins = [];
+    function LinkedVertex(xpos, ypos, zpos, vname){
+        this.vname = vname || "default";
+        this.xpos = xpos;
+        this.ypos = ypos;
+        this.zpos = zpos;
+        this.joins = [];
 
-        return {
-            name : _vname,
-            xpos : function(){
-                return _xpos; 
-            },
-            ypos : function(){
-                return _ypos; 
-            },
-            zpos : function(){
-                return _zpos; 
-            },
-            setXPos : function(xpos){
-                _xpos = xpos; 
-            },
-            setYPos : function(ypos){
-                _ypos = ypos; 
-            },
-            setZPos : function(zpos){
-                _zpos = zpos; 
-            },
-            joins : function(){
-                return _joins;
-            },
-            setJoins : function(joinsArray){
-                _joins = joinsArray;
-            }, 
-            draw : function(){
-                // console.log(_vname);
-                p.vertex(this.xpos(), this.ypos(), this.zpos()); 
-            },
-            move : function(dx, dy, dz){
-                _xpos = xpos + dx;
-                _ypos = ypos + dy;
-                _zpos = zpos + dz;
-            },
-            rotate : function(xopos, yopos, zopos, radius, zenithrad, azimuthrad){
-                // our y direction is treated as z in spherical coords 
-                this.setXPos(xopos + radius*p.cos(azimuthrad)*p.sin(zenithrad));
-                this.setYPos(yopos + radius*p.cos(zenithrad));
-                this.setZPos(zopos + radius*p.sin(azimuthrad)*p.sin(zenithrad));
-            },
-            rotateX : function(rp, radius, zenithrad){
-                this.rotate(rp.xpos(), rp.ypos(), rp.zpos(), radius, zenithrad, p.PI/2);
-            },
-            rotateY : function(xopos, yopos, zopos, radius, azimuthrad){
-                this.rotate(xopos, yopos, zopos, radius, p.PI/2, azimuthrad);
-            },
-            rotateZ : function(xopos, yopos, zopos, radius, zenithrad){
-                this.rotate(xopos, yopos, zopos, radius, zenithrad, 0);
-            },
-            distanceFrom : function(vertex){
-                return Math.sqrt(Math.pow(vertex.xpos() - this.xpos(), 2) + Math.pow(vertex.ypos() - this.ypos(), 2)
-                            + Math.pow(vertex.zpos() - this.zpos(), 2));
-            }
+        this.draw = function(){
+            // console.log(_vname);
+            p.vertex(this.xpos, this.ypos, this.zpos); 
+        };
+        this.move = function(dx, dy, dz){
+            this.xpos += dx;
+            this.ypos += dy;
+            this.zpos += dz;
+        };
+        this.rotate = function(xopos, yopos, zopos, radius, zenithrad, azimuthrad){
+            // our y direction is treated as z in spherical coords 
+            this.xpos = xopos + radius*p.cos(azimuthrad)*p.sin(zenithrad);
+            this.ypos = yopos + radius*p.cos(zenithrad);
+            this.zpos = zopos + radius*p.sin(azimuthrad)*p.sin(zenithrad);
+        };
+        this.rotateX = function(rp, radius, zenithrad){
+            this.rotate(rp.xpos, rp.ypos, rp.zpos, radius, zenithrad, p.PI/2);
+        };
+        this.rotateY = function(xopos, yopos, zopos, radius, azimuthrad){
+            this.rotate(xopos, yopos, zopos, radius, p.PI/2, azimuthrad);
+        };
+        this.rotateZ = function(xopos, yopos, zopos, radius, zenithrad){
+            this.rotate(xopos, yopos, zopos, radius, zenithrad, 0);
+        };
+        this.distanceFrom = function(vertex){
+            return Math.sqrt(Math.pow(vertex.xpos - this.xpos, 2) + Math.pow(vertex.ypos - this.ypos, 2)
+                + Math.pow(vertex.zpos - this.zpos, 2));
         };
     };
 
@@ -359,19 +332,19 @@ function sketchProc(p){
 
     function VerticalPyramid(r, l){
 
-        var point = linkedVertex(0, l/2, 0, "point");
-        var b1 = linkedVertex(+r, -l/2, -r, "b1");
-        var b2 = linkedVertex(+r, -l/2, +r, "b2");
-        var b3 = linkedVertex(-r, -l/2, +r, "b3");
-        var b4 = linkedVertex(-r, -l/2, -r, "b4");
-        var rotationPoint  = linkedVertex(0, -l/2, 0, "rp");
+        var point = new LinkedVertex(0, l/2, 0, "point");
+        var b1 = new LinkedVertex(+r, -l/2, -r, "b1");
+        var b2 = new LinkedVertex(+r, -l/2, +r, "b2");
+        var b3 = new LinkedVertex(-r, -l/2, +r, "b3");
+        var b4 = new LinkedVertex(-r, -l/2, -r, "b4");
+        var rotationPoint  = new LinkedVertex(0, -l/2, 0, "rp");
         var shape = new Shape([point, b1, b2, b3, b4], rotationPoint);
 
-        point.setJoins([b1, b2, b3, b4]);
-        b1.setJoins([point, b4, b2]);
-        b2.setJoins([point, b1, b3]);
-        b3.setJoins([point, b2, b4]);
-        b4.setJoins([point, b3, b1])
+        point.joins = [b1, b2, b3, b4];
+        b1.joins = [point, b4, b2];
+        b2.joins = [point, b1, b3];
+        b3.joins = [point, b2, b4];
+        b4.joins = [point, b3, b1];
 
         this.vertices = function(){
             return shape.vertices();
