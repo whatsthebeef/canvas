@@ -151,6 +151,11 @@ function sketchProc(p){
             tearDown();
         };
 
+        this.draw = function(shape){
+            this.drawWithVertices(shape.vertices(), shape.color(), shape.position().xpos, shape.position().ypos, 
+                    shape.position().zpos);
+        };
+
         this.drawWithVertices = function(_vertices, color, xpos, ypos, zpos, hook, hookArgs){
 
             setUp(color, xpos, ypos, zpos);
@@ -217,17 +222,23 @@ function sketchProc(p){
             switch(state){
                 case LEFT_FOOT_FORWARD:
                     leftLeg.stepBack();
+                    pencil.draw(leftLeg);
                     rightLeg.stepForward();
+                    pencil.draw(rightLeg);
                     state = RIGHT_FOOT_FORWARD;
                     break;
                 case RIGHT_FOOT_FORWARD:
                     rightLeg.stepBack();
+                    pencil.draw(rightLeg);
                     leftLeg.stepForward();
+                    pencil.draw(leftLeg);
                     state = LEFT_FOOT_FORWARD;
                     break;
                 default:
                     leftLeg.stepForward();
+                    pencil.draw(leftLeg);
                     rightLeg.stepBack();
+                    pencil.draw(rightLeg);
                     state = LEFT_FOOT_FORWARD;
                     break;
             };
@@ -242,16 +253,24 @@ function sketchProc(p){
         var _xpos = xpos;
         var _ypos = ypos;
         var _zpos = zpos;
+        var _position = new LinkedVertex(xpos, ypos, zpos);
         var _rotate = rotate;
         var _vp = new VerticalPyramid(10, 40);
 
-        this.draw = function(){
-            pencil.drawWithVertices(_vp.vertices(), color, _xpos, _ypos, _zpos);
+        this.vertices = function(){
+            return _vp.vertices();
+        };
+
+        this.color = function(){
+            return _color;
+        };
+
+        this.position = function(){
+            return _position;
         };
 
         this.step = function(rad){
             _vp.rotatePointX(rad);
-            this.draw();
         };
 
         this.stepForward = function(){
