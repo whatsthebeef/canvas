@@ -192,8 +192,8 @@ function sketchProc(p){
                 this.rotate(xopos, yopos, zopos, radius, zenithrad, 0);
             },
             distanceFrom : function(vertex){
-                return Math.sqrt(Math.pow(vertex.xpos() - this.xpos(), 2), Math.pow(vertex.ypos() - this.ypos(), 2),
-                            Math.pow(vertex.zpos() - this.zpos(), 2));
+                return Math.sqrt(Math.pow(vertex.xpos() - this.xpos(), 2) + Math.pow(vertex.ypos() - this.ypos(), 2)
+                            + Math.pow(vertex.zpos() - this.zpos(), 2));
             }
         };
     };
@@ -256,9 +256,9 @@ function sketchProc(p){
         }
 
         /* vertex object or index of vertex in vertices can be passed */
-        this.rotateVertexX = function(vertex, dzenithrad, rotationPoint){
+        this.rotateVertexX = function(vertex, zenithrad, rotationPoint){
             var rotatingVertex = typeof vertex === "number" ? _vertices[vertex] : vertex; 
-            rotatingVertex.rotateX(rotationPoint || _rp, _rp.distanceFrom(vertex), dzenithrad);
+            rotatingVertex.rotateX(rotationPoint || _rp, _rp.distanceFrom(vertex), zenithrad);
             this.draw();
         }
 
@@ -285,7 +285,7 @@ function sketchProc(p){
         }
 
         this.rotatePointX = function(){
-            shape.rotateVertexX(point, p.PI/2);
+            shape.rotateVertexX(point, p.PI/4);
         }
     }    
 }
