@@ -32,7 +32,7 @@ function sketchProc(p){
     var backgroundColor = 255;
 
     var legs = new Legs(0, 220, 0, rotation, 180);
-    var body = new Body(0, 260, 0, 40, 40, 20, 80, rotation);
+    var body = new Body(0, 260, 0, 40, 40, 20, 80);
     var world = new World(0, 0, 0, 200, 255, rotation);
     var head = new Head(0, 300, 0, 20);
     var pencil = new Pencil();
@@ -73,7 +73,22 @@ function sketchProc(p){
             _world.rotateDraw();
         };
     };
-    
+ 
+    function Body(xpos, ypos, zpos, xsize, ysize, zsize, color){
+
+        var _color = color;
+        var _xpos = xpos;
+        var _ypos = ypos;
+        var _zpos = zpos;
+        var _xsize = xsize;
+        var _ysize = ysize;
+        var _zsize = zsize;
+
+        this.draw = function(){
+            pencil.drawWithShape(p.box, [_xsize, _ysize, _zsize], _color, _xpos, _ypos, _zpos);
+        };
+    };
+   
     function Sphere(xpos, ypos, zpos, rsize, color, rotate){
 
         var r = 0.0;
@@ -85,60 +100,58 @@ function sketchProc(p){
         var _rotate = rotate;
 
         this.draw = function(){
-            p.fill(_color);
-            p.pushMatrix();
-            positionedTranslate(_xpos, _ypos, _zpos);
-            p.sphere(_rsize);
-            p.popMatrix();
+            pencil.drawWithShape(p.sphere, [_rsize], _color, _xpos, _ypos, _zpos);
         };
 
         this.rotateDraw = function(){
-            p.fill(_color);
             r += 0.01;
-            p.pushMatrix();
-            positionedTranslate(_xpos, _ypos, _zpos);
-            p.rotateX(p.cos(_rotate)*r);
-            p.rotateZ(p.sin(_rotate)*r);
-            p.sphere(_rsize);
-            p.popMatrix();
-        };
-    };
-
-    function Body(xpos, ypos, zpos, xsize, ysize, zsize, colour, rotate){
-
-        var _colour = colour;
-        var _xpos = xpos;
-        var _ypos = ypos;
-        var _zpos = zpos;
-        var _xsize = xsize;
-        var _ysize = ysize;
-        var _zsize = zsize;
-        var _rotate = rotate;
-
-        this.draw = function(){
-            p.fill(_colour);
-            p.pushMatrix();
-            positionedTranslate(_xpos, _ypos, _zpos);
-            p.rotateY(_rotate);
-            p.box(_xsize, _ysize, _zsize);
-            p.popMatrix();
+            extraArgs = {
+                hook : function(_rotate, r){
+                            p.rotateX(p.cos(_rotate)*r);
+                            p.rotateZ(p.sin(_rotate)*r);
+                       }, 
+                hookArgs : [_rotate, r],
+                rotation : 0 
+            };
+            pencil.drawWithShape(p.sphere, [_rsize], _color, _xpos, _ypos, _zpos, extraArgs);
         };
     };
 
     function Pencil(){
 
-        var setUp = function(color, xpos, ypos, zpos){
+        var setUp = function(color, xpos, ypos, zpos, extraArgs){
             p.pushMatrix();
             p.fill(color);
             positionedTranslate(xpos, ypos, zpos);
-            p.rotateY(rotation);
+            if(extraArgs != undefined){
+                if(extraArgs.rotation != undefined){
+                    p.rotateY(extraArgs.rotation);
+                }
+                else {
+                    p.rotateY(rotation);
+                }
+                // hooks should be called after rotation
+                if(extraArgs.hook){
+                    extraArgs.hook.apply(this, extraArgs.hookArgs);
+                }
+            }
+            else {
+                p.rotateY(rotation);
+            }
         };
 
         var tearDown = function(){
             p.popMatrix();
         };
 
-        this.draw = function(_vertices, color, xpos, ypos, zpos){
+        /* When it desired to draw a shape using an existing processing function */
+        this.drawWithShape = function(shapeFunction, args, color, xpos, ypos, zpos, hook, hookArgs){
+            setUp(color, xpos, ypos, zpos, hook, hookArgs);
+            shapeFunction.apply(this, args);
+            tearDown();
+        };
+
+        this.drawWithVertices = function(_vertices, color, xpos, ypos, zpos, hook, hookArgs){
 
             setUp(color, xpos, ypos, zpos);
 
@@ -233,7 +246,7 @@ function sketchProc(p){
         var _vp = new VerticalPyramid(10, 40);
 
         this.draw = function(){
-            pencil.draw(_vp.vertices(), color, _xpos, _ypos, _zpos);
+            pencil.drawWithVertices(_vp.vertices(), color, _xpos, _ypos, _zpos);
         };
 
         this.step = function(rad){
