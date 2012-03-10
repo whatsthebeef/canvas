@@ -25,51 +25,87 @@ function sketchProc(p){
 
     var XPos = 0.0;
     var YPos = 0.0;
-    var r = 0.0;
-    var v1 = 0;
-    var d1 = 1;
-    var v2 = 0;
-    var d2 = 1;
-    var zpoint = 0;
+    var ZPos = 0.0;
 
-    var rotation = p.radians(0);
+    var rotation = p.radians(45);
 
-    var rightLeg = new Leg(10, 220, 10, rotation, 180);
-    var leftLeg = new Leg(-10, 220, -10, rotation, 100);
+    var backgroundColor = 255;
+
+    var legs = new Legs(0, 220, 0, rotation, 180);
     var body = new Body(0, 260, 0, 40, 40, 20, 80, rotation);
+    var world = new World(0, 0, 0, 200, 255, rotation);
+    var head = new Head(0, 300, 0, 20);
 
     p.setup = function(){
+        p.background(backgroundColor);
         p.size(600, 400, p.OPENGL);
         p.frameRate(1);
         p.background(255);
         XPos = p.width/2;
         YPos = p.height;
-        rightLeg.draw();
     };
 
     p.draw = function(){
 
-        p.background(255);
+        p.background(backgroundColor);
 
-        // head(0, 300, 0, 20);
+        head.draw();
 
-        // body.draw();
+        body.draw();
 
-        rightLeg.step();
-        // leftLeg.draw();
+        legs.walk();
 
-        // world(0, 0, 0, 200, 255, rotation);
-    }
+        world.turn();
+    };
 
+    function Head(xpos, ypos, zpos, rsize, color){
+        var _head = new Sphere(xpos, ypos, zpos, rsize, color);
 
-    var head = function(xpos, ypos, zpos, rsize){
-        p.pushMatrix();
-        positionedTranslate(xpos, ypos, zpos);
-        p.sphere(rsize);
-        p.popMatrix();
-    }
+        this.draw = function(){
+            _head.draw();
+        };
+    };
+
+    function World(xpos, ypos, zpos, rsize, color, rotate){
+        var _world = new Sphere(xpos, ypos, zpos, rsize, color, rotate);
+
+        this.turn = function(){
+            _world.rotateDraw();
+        };
+    };
+    
+    function Sphere(xpos, ypos, zpos, rsize, color, rotate){
+
+        var r = 0.0;
+        var _xpos = xpos; 
+        var _ypos = ypos; 
+        var _zpos = zpos; 
+        var _rsize = rsize;
+        var _color = color;
+        var _rotate = rotate;
+
+        this.draw = function(){
+            p.fill(_color);
+            p.pushMatrix();
+            positionedTranslate(_xpos, _ypos, _zpos);
+            p.sphere(_rsize);
+            p.popMatrix();
+        };
+
+        this.rotateDraw = function(){
+            p.fill(_color);
+            r += 0.01;
+            p.pushMatrix();
+            positionedTranslate(_xpos, _ypos, _zpos);
+            p.rotateX(p.cos(_rotate)*r);
+            p.rotateZ(p.sin(_rotate)*r);
+            p.sphere(_rsize);
+            p.popMatrix();
+        };
+    };
 
     function Body(xpos, ypos, zpos, xsize, ysize, zsize, colour, rotate){
+
         var _colour = colour;
         var _xpos = xpos;
         var _ypos = ypos;
@@ -86,11 +122,56 @@ function sketchProc(p){
             p.rotateY(_rotate);
             p.box(_xsize, _ysize, _zsize);
             p.popMatrix();
-        }
-    }
+        };
+    };
 
-    function Leg(xpos, ypos, zpos, rotate, colour){
-        var _colour = colour;
+    function Pencil(){
+    
+        function draw(xpos, ypos, zpos, rotate){
+        };
+    };
+
+    function Legs(xpos, ypos, zpos, rotate, color){
+        var RIGHT_FOOT_FORWARD = 0;
+        var LEFT_FOOT_FORWARD = 1;
+
+        var state = RIGHT_FOOT_FORWARD;
+        
+        var _color = color;
+        var _xpos = xpos;
+        var _ypos = ypos;
+        var _zpos = zpos;
+        var _rotate = rotate;
+
+        var leftLeg = new Leg(xpos + 10, ypos, zpos + 10, rotate, color);
+        var rightLeg = new Leg(xpos + -10, ypos, zpos + -10, rotate, color);
+
+        this.walk = function(){
+            switch(state){
+                case LEFT_FOOT_FORWARD:
+                    leftLeg.stepBack();
+                    rightLeg.stepForward();
+                    state = RIGHT_FOOT_FORWARD;
+                    break;
+                case RIGHT_FOOT_FORWARD:
+                    rightLeg.stepBack();
+                    leftLeg.stepForward();
+                    state = LEFT_FOOT_FORWARD;
+                    break;
+                default:
+                    leftLeg.stepForward();
+                    rightLeg.stepBack();
+                    state = LEFT_FOOT_FORWARD;
+                    break;
+            };
+        };
+    };
+
+    function Leg(xpos, ypos, zpos, rotate, color){
+
+        var _steprad = p.PI/4;
+
+        var _color = color;
         var _xpos = xpos;
         var _ypos = ypos;
         var _zpos = zpos;
@@ -98,39 +179,32 @@ function sketchProc(p){
         var _vp = new VerticalPyramid(10, 40);
 
         this.draw = function(){
-            p.fill(_colour);
+            p.fill(_color);
             p.pushMatrix();
             positionedTranslate(p.cos(-rotate)*_xpos, _ypos, p.sin(-rotate)*_zpos);
             p.rotateY(_rotate);
             _vp.draw();
             p.popMatrix();
-        }
+        };
 
-        this.step = function(){
-            p.fill(_colour);
-            p.pushMatrix();
-            positionedTranslate(p.cos(-rotate)*_xpos, _ypos, p.sin(-rotate)*_zpos);
-            p.rotateY(_rotate);
-            _vp.rotatePointX();
-            p.popMatrix();
-        }
+        this.step = function(rad){
+            _vp.rotatePointX(rad);
+            this.draw();
+        };
 
-    }
+        this.stepForward = function(){
+            this.step(_steprad);
+        };
 
-    var world = function(xpos, ypos, zpos, rsize, color, rotate){
-        p.fill(color);
-        r += 0.01;
-        p.pushMatrix();
-        positionedTranslate(xpos, ypos, zpos);
-        p.rotateX(p.cos(rotate)*r);
-        p.rotateZ(p.sin(rotate)*r);
-        p.sphere(rsize);
-        p.popMatrix();
-    }
+        this.stepBack = function(){
+            this.step(-1*_steprad);
+        };
 
-    var positionedVertex = function(x, y, z){
-        p.vertex(x, y, z); 
-    }
+        this.center = function(){
+            this.step(0);
+        };
+    };
+
 
     function linkedVertex(xpos, ypos, zpos, vname){
         var _vname = vname || "default";
@@ -175,12 +249,10 @@ function sketchProc(p){
                 _zpos = zpos + dz;
             },
             rotate : function(xopos, yopos, zopos, radius, zenithrad, azimuthrad){
-                console.log("Before: ", this.xpos(), this.ypos(), this.zpos());
                 // our y direction is treated as z in spherical coords 
                 this.setXPos(xopos + radius*p.cos(azimuthrad)*p.sin(zenithrad));
                 this.setYPos(yopos + radius*p.cos(zenithrad));
                 this.setZPos(zopos + radius*p.sin(azimuthrad)*p.sin(zenithrad));
-                console.log("After : ", this.xpos(), this.ypos(), this.zpos());
             },
             rotateX : function(rp, radius, zenithrad){
                 this.rotate(rp.xpos(), rp.ypos(), rp.zpos(), radius, zenithrad, p.PI/2);
@@ -199,7 +271,7 @@ function sketchProc(p){
     };
 
     function positionedTranslate(x, y, z){
-        p.translate(XPos + x, YPos - y, 0 + z);
+        p.translate(XPos + x, YPos - y, ZPos + z);
     }
 
     function Shape(vertices, rotationPoint){
@@ -252,14 +324,12 @@ function sketchProc(p){
 
         this.moveVertex = function(vertexIndex, dx, dy, dz){
             _vertices[vertexIndex].move(dx, dy, dz);
-            this.draw();
         }
 
         /* vertex object or index of vertex in vertices can be passed */
         this.rotateVertexX = function(vertex, zenithrad, rotationPoint){
             var rotatingVertex = typeof vertex === "number" ? _vertices[vertex] : vertex; 
             rotatingVertex.rotateX(rotationPoint || _rp, _rp.distanceFrom(vertex), zenithrad);
-            this.draw();
         }
 
     }
@@ -282,11 +352,11 @@ function sketchProc(p){
 
         this.draw = function(){
             shape.draw();
-        }
+        };
 
-        this.rotatePointX = function(){
-            shape.rotateVertexX(point, p.PI/4);
-        }
-    }    
+        this.rotatePointX = function(zenithrad){
+            shape.rotateVertexX(point, zenithrad);
+        };
+    };    
 }
 
