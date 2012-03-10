@@ -35,12 +35,12 @@ function sketchProc(p){
     var body = new Body(0, 260, 0, 40, 40, 20, 80, rotation);
     var world = new World(0, 0, 0, 200, 255, rotation);
     var head = new Head(0, 300, 0, 20);
+    var pencil = new Pencil();
 
     p.setup = function(){
-        p.background(backgroundColor);
         p.size(600, 400, p.OPENGL);
         p.frameRate(1);
-        p.background(255);
+        p.background(backgroundColor);
         XPos = p.width/2;
         YPos = p.height;
     };
@@ -126,9 +126,55 @@ function sketchProc(p){
     };
 
     function Pencil(){
-    
-        function draw(xpos, ypos, zpos, rotate){
+
+        this.prepare = function(color){
+            p.fill(color);
+            p.rotateY(rotation);
         };
+
+        this.draw = function(_vertices, color){
+
+            this.prepare(color);
+
+            // need to make mutable copy so I can remove elements when processed
+            var vertices = _vertices.slice(0);
+
+            p.beginShape();
+            // draw first point
+            vertices[0].draw();
+            (function recursiveDraw(vertex){
+                var vertexJoins = vertex.joins();
+                if(vertexJoins.length > 0){
+                    // save joins so they can be restored fter cyling through and eliminating
+                    // processed joins
+                    var vertexJoinsCopy = vertexJoins.slice(0);
+                    // cycle through joins of current vertices
+                    vertexJoins.forEach(function(element, index, arr){
+                        // if joined vertex has been processed we don't need to do it again
+                        element.draw();
+                        // remove the line we are about to draw
+                        arr.removeAtIndex(index);
+                        // Need to remove vertex from next element so it won't redraw this line
+                        element.joins().remove(vertex);
+                        recursiveDraw(element);
+                    });
+                    // replace with copy of joins as actual joins have all been removed
+                    // during processing
+                    vertex.setJoins(vertexJoinsCopy);
+                }
+                else{
+                    vertices.remove(vertex);
+                    var nextVertex = vertices.pop();
+                    if(nextVertex != undefined){
+                        // draw new vertex so you get
+                        nextVertex.draw();
+                        recursiveDraw(nextVertex);
+                    }
+                }
+            })(vertices[0]);
+
+            p.endShape();
+        }
     };
 
     function Legs(xpos, ypos, zpos, rotate, color){
@@ -143,8 +189,8 @@ function sketchProc(p){
         var _zpos = zpos;
         var _rotate = rotate;
 
-        var leftLeg = new Leg(xpos + 10, ypos, zpos + 10, rotate, color);
-        var rightLeg = new Leg(xpos + -10, ypos, zpos + -10, rotate, color);
+        var leftLeg = new Leg(p.cos(-rotate)*(_xpos + 10), _ypos, p.sin(-rotate)*(_zpos + 10), rotate, color);
+        var rightLeg = new Leg(p.cos(-rotate)*(_xpos + -10), _ypos, p.sin(-rotate)*(_zpos + -10), rotate, color);
 
         this.walk = function(){
             switch(state){
@@ -179,11 +225,9 @@ function sketchProc(p){
         var _vp = new VerticalPyramid(10, 40);
 
         this.draw = function(){
-            p.fill(_color);
             p.pushMatrix();
-            positionedTranslate(p.cos(-rotate)*_xpos, _ypos, p.sin(-rotate)*_zpos);
-            p.rotateY(_rotate);
-            _vp.draw();
+            positionedTranslate(_xpos, _ypos, _zpos);
+            pencil.draw(_vp.vertices(), color);
             p.popMatrix();
         };
 
@@ -280,46 +324,8 @@ function sketchProc(p){
 
         var _rp  = rotationPoint; 
 
-        this.draw = function(){
-
-            // need to make mutable copy so I can remove elements when processed
-            var vertices = _vertices.slice(0);
-
-            p.beginShape();
-            // draw first point
-            vertices[0].draw();
-            (function recursiveDraw(vertex){
-                var vertexJoins = vertex.joins();
-                if(vertexJoins.length > 0){
-                    // save joins so they can be restored fter cyling through and eliminating
-                    // processed joins
-                    var vertexJoinsCopy = vertexJoins.slice(0);
-                    // cycle through joins of current vertices
-                    vertexJoins.forEach(function(element, index, arr){
-                        // if joined vertex has been processed we don't need to do it again
-                        element.draw();
-                        // remove the line we are about to draw
-                        arr.removeAtIndex(index);
-                        // Need to remove vertex from next element so it won't redraw this line
-                        element.joins().remove(vertex);
-                        recursiveDraw(element);
-                    });
-                    // replace with copy of joins as actual joins have all been removed
-                    // during processing
-                    vertex.setJoins(vertexJoinsCopy);
-                }
-                else{
-                    vertices.remove(vertex);
-                    var nextVertex = vertices.pop();
-                    if(nextVertex != undefined){
-                        // draw new vertex so you get
-                        nextVertex.draw();
-                        recursiveDraw(nextVertex);
-                    }
-                }
-            })(vertices[0]);
-
-            p.endShape();
+        this.vertices = function(){
+            return _vertices;
         }
 
         this.moveVertex = function(vertexIndex, dx, dy, dz){
@@ -331,7 +337,6 @@ function sketchProc(p){
             var rotatingVertex = typeof vertex === "number" ? _vertices[vertex] : vertex; 
             rotatingVertex.rotateX(rotationPoint || _rp, _rp.distanceFrom(vertex), zenithrad);
         }
-
     }
 
     function VerticalPyramid(r, l){
@@ -350,8 +355,8 @@ function sketchProc(p){
         b3.setJoins([point, b2, b4]);
         b4.setJoins([point, b3, b1])
 
-        this.draw = function(){
-            shape.draw();
+        this.vertices = function(){
+            return shape.vertices();
         };
 
         this.rotatePointX = function(zenithrad){
