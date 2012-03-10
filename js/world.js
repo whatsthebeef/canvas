@@ -127,14 +127,20 @@ function sketchProc(p){
 
     function Pencil(){
 
-        this.prepare = function(color){
+        var setUp = function(color, xpos, ypos, zpos){
+            p.pushMatrix();
             p.fill(color);
+            positionedTranslate(xpos, ypos, zpos);
             p.rotateY(rotation);
         };
 
-        this.draw = function(_vertices, color){
+        var tearDown = function(){
+            p.popMatrix();
+        };
 
-            this.prepare(color);
+        this.draw = function(_vertices, color, xpos, ypos, zpos){
+
+            setUp(color, xpos, ypos, zpos);
 
             // need to make mutable copy so I can remove elements when processed
             var vertices = _vertices.slice(0);
@@ -174,6 +180,8 @@ function sketchProc(p){
             })(vertices[0]);
 
             p.endShape();
+            
+            tearDown();
         }
     };
 
@@ -225,10 +233,7 @@ function sketchProc(p){
         var _vp = new VerticalPyramid(10, 40);
 
         this.draw = function(){
-            p.pushMatrix();
-            positionedTranslate(_xpos, _ypos, _zpos);
-            pencil.draw(_vp.vertices(), color);
-            p.popMatrix();
+            pencil.draw(_vp.vertices(), color, _xpos, _ypos, _zpos);
         };
 
         this.step = function(rad){
