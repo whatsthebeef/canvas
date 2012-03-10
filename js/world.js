@@ -138,35 +138,46 @@ function sketchProc(p){
         var _joins = [];
         return {
             name : _vname,
-                 joins : function(){
-                     return _joins;
-                 },
-                 setJoins : function(joinsArray){
-                                _joins = joinsArray;
-                            }, 
-                 draw : function(){
-                            // console.log(_vname);
-                            p.vertex(_xpos, _ypos, _zpos); 
-                        },
-                 move : function(dx, dy, dz){
-                            _xpos = xpos + dx;
-                            _ypos = ypos + dy;
-                            _zpos = zpos + dz;
-                        },
-                 rotate : function(xopos, yopos, zopos, radius, zenithrad, azimuthrad){
-                              _xpos = xopos + radius*p.cos(azimuthrad)*p.sin(zenithrad);
-                              _ypos = yopos + radius*p.sin(azimuthrad)*p.sin(zenithrad);
-                              _zpos = zopos + radius*p.cos(zenithrad);
-                        },
-                 rotateX : function(xopos, yopos, zopos, radius, zenithrad){
-                              this.rotate(xopos, yopos, zopos, radius, zenithrad, p.PI/2);
-                        },
-                 rotateY : function(xopos, yopos, zopos, radius, azimuthrad){
-                              this.rotate(xopos, yopos, zopos, radius, 0, azimuthrad);
-                        },
-                 rotateZ : function(xopos, yopos, zopos, radius, zenithrad){
-                              this.rotate(xopos, yopos, zopos, radius, p.PI/2, zenithrad);
-                        }
+            setXPos : function(xpos){
+                _xpos = xpos; 
+            },
+            setYPos : function(ypos){
+                _ypos = ypos; 
+            },
+            setZPos : function(zpos){
+                _zpos = zpos; 
+            },
+            joins : function(){
+                return _joins;
+            },
+            setJoins : function(joinsArray){
+                _joins = joinsArray;
+            }, 
+            draw : function(){
+                // console.log(_vname);
+                p.vertex(_xpos, _ypos, _zpos); 
+            },
+            move : function(dx, dy, dz){
+                _xpos = xpos + dx;
+                _ypos = ypos + dy;
+                _zpos = zpos + dz;
+            },
+            rotate : function(xopos, yopos, zopos, radius, zenithrad, azimuthrad){
+                // y direction is treated as zn spherical coords 
+                this.setXPos(xopos + radius*p.cos(azimuthrad)*p.sin(zenithrad));
+                this.setYPos(yopos + radius*p.cos(zenithrad));
+                this.setZPos(zopos + radius*p.sin(azimuthrad)*p.sin(zenithrad));
+                // console.log("After : ", xpo
+            },
+            rotateX : function(xopos, yopos, zopos, radius, zenithrad){
+                this.rotate(xopos, yopos, zopos, radius, zenithrad, p.PI/2);
+            },
+            rotateY : function(xopos, yopos, zopos, radius, azimuthrad){
+                this.rotate(xopos, yopos, zopos, radius, p.PI/2, azimuthrad);
+            },
+            rotateZ : function(xopos, yopos, zopos, radius, zenithrad){
+                this.rotate(xopos, yopos, zopos, radius, zenithrad, 0);
+            }
         };
     };
 
@@ -223,6 +234,10 @@ function sketchProc(p){
         function moveVertex(vertexIndex, dx, dy, dz){
             _vertices[vertexIndex].move(dx, dy, dz);
         }
+
+        function rotateVertexX(vertexIndex, dzenithrad){
+            _vertices[vertexIndex].rotateX(dzenithrad);
+        }
     }
 
     function VerticalPyramid(r, l){
@@ -245,8 +260,8 @@ function sketchProc(p){
         }
 
         this.rotatePointX = function(){
-            point.rotateZ(0, -l/2, 0, l, p.PI/4);  
-            shape.draw();
+            point.rotateX(0, -l/2, 0, l, 90);  
+            this.draw();
         }
     }    
 }
