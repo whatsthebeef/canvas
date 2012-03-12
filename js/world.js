@@ -85,7 +85,7 @@ function sketchProc(p){
         var _zsize = zsize;
 
         this.draw = function(){
-            pencil.drawWithShape(p.box, [_xsize, _ysize, _zsize], _color, _xpos, _ypos, _zpos);
+            pencil.draw(p.box, [_xsize, _ysize, _zsize], _color, _xpos, _ypos, _zpos);
         };
     };
    
@@ -100,7 +100,7 @@ function sketchProc(p){
         var _rotate = rotate;
 
         this.draw = function(){
-            pencil.drawWithShape(p.sphere, [_rsize], _color, _xpos, _ypos, _zpos);
+            pencil.draw(p.sphere, [_rsize], _color, _xpos, _ypos, _zpos);
         };
 
         this.rotateDraw = function(){
@@ -119,10 +119,10 @@ function sketchProc(p){
 
     function Pencil(){
 
-        var setUp = function(color, xpos, ypos, zpos, extraArgs){
+        var setUp = function(color, position, extraArgs){
             p.pushMatrix();
             p.fill(color);
-            positionedTranslate(xpos, ypos, zpos);
+            positionedTranslate(position.xpos, position.ypos, position.zpos);
             if(extraArgs != undefined){
                 if(extraArgs.rotation != undefined){
                     p.rotateY(extraArgs.rotation);
@@ -145,20 +145,13 @@ function sketchProc(p){
         };
 
         /* When it desired to draw a shape using an existing processing function */
-        this.drawWithShape = function(shapeFunction, args, color, xpos, ypos, zpos, hook, hookArgs){
-            setUp(color, xpos, ypos, zpos, hook, hookArgs);
-            shapeFunction.apply(this, args);
+        this.draw = function(shapeFunction, shapeArgs, color, position, extraArgs){
+            setUp(color, position, extraArgs);
+            shapeFunction.apply(shapeFunction, shapeArgs);
             tearDown();
         };
 
-        this.draw = function(shape){
-            this.drawWithVertices(shape.vertices(), shape.color(), shape.position().xpos, shape.position().ypos, 
-                    shape.position().zpos);
-        };
-
-        this.drawWithVertices = function(_vertices, color, xpos, ypos, zpos, hook, hookArgs){
-
-            setUp(color, xpos, ypos, zpos);
+        this.vertexShape = function(_vertices){
 
             // need to make mutable copy so I can remove elements when processed
             var vertices = _vertices.slice(0);
@@ -198,8 +191,6 @@ function sketchProc(p){
             })(vertices[0]);
 
             p.endShape();
-            
-            tearDown();
         }
     };
 
@@ -215,8 +206,8 @@ function sketchProc(p){
         var _zpos = zpos;
         var _rotate = rotate;
 
-        var leftLeg = new Leg(p.cos(-rotate)*(_xpos + 10), _ypos, p.sin(-rotate)*(_zpos + 10), rotate, color);
-        var rightLeg = new Leg(p.cos(-rotate)*(_xpos + -10), _ypos, p.sin(-rotate)*(_zpos + -10), rotate, color);
+        var leftLeg = new Leg(p.cos(-_rotate)*(_xpos + 10), _ypos, p.sin(-_rotate)*(_zpos + 10), _rotate, _color);
+        var rightLeg = new Leg(p.cos(-_rotate)*(_xpos + -10), _ypos, p.sin(-_rotate)*(_zpos + -10), _rotate, _color);
 
         this.walk = function(){
             switch(state){
@@ -255,7 +246,8 @@ function sketchProc(p){
         var _zpos = zpos;
         var _position = new LinkedVertex(xpos, ypos, zpos);
         var _rotate = rotate;
-        var _vp = new VerticalPyramid(10, 40);
+        var _extraArgs = {};
+        var _vp = new VerticalPyramid(10, 40, _color, _position, _extraArgs);
 
         this.vertices = function(){
             return _vp.vertices();
@@ -328,28 +320,26 @@ function sketchProc(p){
         p.translate(XPos + x, YPos - y, ZPos + z);
     }
 
-    function Shape(vertices, rotationPoint){
+    function Object(shapeFunction, shapeArgs, color, position, extraArgs){
 
-        var _vertices = vertices; 
-
-        var _rp  = rotationPoint; 
-
-        this.vertices = function(){
-            return _vertices;
-        }
+        this.shapeFunction = shapeFunction; 
+        this.shapeArgs = shapeArgs; 
+        this.color = color; 
+        this.position = position; 
+        this.extraArgs = extraArgs; 
 
         this.moveVertex = function(vertexIndex, dx, dy, dz){
-            _vertices[vertexIndex].move(dx, dy, dz);
+            this.shapeArgs[vertexIndex].move(dx, dy, dz);
         }
 
         /* vertex object or index of vertex in vertices can be passed */
         this.rotateVertexX = function(vertex, zenithrad, rotationPoint){
-            var rotatingVertex = typeof vertex === "number" ? _vertices[vertex] : vertex; 
-            rotatingVertex.rotateX(rotationPoint || _rp, _rp.distanceFrom(vertex), zenithrad);
+            var rotatingVertex = typeof vertex === "number" ? this.shapeArgs[vertex] : vertex; 
+            rotatingVertex.rotateX(rotationPoint, rotationPoint.distanceFrom(vertex), zenithrad);
         }
     }
 
-    function VerticalPyramid(r, l){
+    function VerticalPyramid(r, l, color, position, extraArgs){
 
         var point = new LinkedVertex(0, l/2, 0, "point");
         var b1 = new LinkedVertex(+r, -l/2, -r, "b1");
@@ -357,7 +347,7 @@ function sketchProc(p){
         var b3 = new LinkedVertex(-r, -l/2, +r, "b3");
         var b4 = new LinkedVertex(-r, -l/2, -r, "b4");
         var rotationPoint  = new LinkedVertex(0, -l/2, 0, "rp");
-        var shape = new Shape([point, b1, b2, b3, b4], rotationPoint);
+        var shape = new Object(Pencil.vertexShape, [point, b1, b2, b3, b4], color, position, extraArgs);
 
         point.joins = [b1, b2, b3, b4];
         b1.joins = [point, b4, b2];
@@ -366,11 +356,23 @@ function sketchProc(p){
         b4.joins = [point, b3, b1];
 
         this.vertices = function(){
-            return shape.vertices();
+            return shape.shapeArgs;
         };
 
         this.rotatePointX = function(zenithrad){
-            shape.rotateVertexX(point, zenithrad);
+            shape.rotateVertexX(point, zenithrad, rotationPoint);
+        };
+
+        this.position = function(){
+            return this.shape.position;
+        };
+
+        this.color = function(){
+            return this.shape.color;
+        };
+
+        this.extraArgs = function(){
+            return this.shape.extraArgs;
         };
     };    
 }
