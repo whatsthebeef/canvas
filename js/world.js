@@ -23,6 +23,14 @@ if (!Array.prototype.removeAtIndex) {
 
 function sketchProc(p){
 
+    VerticalPyramid.prototype = new Shape();
+
+    VerticalPyramid.prototype.rotationPoint = null;
+
+    VerticalPyramid.prototype.rotatePointX = function(zenithrad){
+        this.rotateVertexX(this.shapeArgs[0], zenithrad, this.rotationPoint);
+    };
+
     var XPos = 0.0;
     var YPos = 0.0;
     var ZPos = 0.0;
@@ -99,6 +107,7 @@ function sketchProc(p){
         var _color = color;
         var _rotate = rotate;
 
+
         this.draw = function(){
             pencil.draw(p.sphere, [_rsize], _color, _xpos, _ypos, _zpos);
         };
@@ -116,6 +125,8 @@ function sketchProc(p){
             pencil.drawWithShape(p.sphere, [_rsize], _color, _xpos, _ypos, _zpos, extraArgs);
         };
     };
+
+    Sphere.prototype = new Shape();
 
     function Pencil(){
 
@@ -221,7 +232,6 @@ function sketchProc(p){
         };
 
         this.step = function(rad){
-            console.dir(_vp);
             _vp.rotatePointX(rad);
         };
 
@@ -310,7 +320,8 @@ function sketchProc(p){
         var b2 = new LinkedVertex(+r, -l/2, +r, "b2");
         var b3 = new LinkedVertex(-r, -l/2, +r, "b3");
         var b4 = new LinkedVertex(-r, -l/2, -r, "b4");
-        var rotationPoint  = new LinkedVertex(0, -l/2, 0, "rp");
+
+        this.rotationPoint  = new LinkedVertex(0, -l/2, 0, "rp");
 
         Shape.apply(this, [vertexShape, [point, b1, b2, b3, b4], color, position, extraArgs]);
 
@@ -320,13 +331,6 @@ function sketchProc(p){
         b3.joins = [point, b2, b4];
         b4.joins = [point, b3, b1];
     };    
-
-    VerticalPyramid.prototype = new Shape();
-
-    VerticalPyramid.prototype.rotatePointX = function(zenithrad){
-        this.rotateVertexX(point, zenithrad, rotationPoint);
-    };
-
 }
 
 function vertexShape(_vertices){
