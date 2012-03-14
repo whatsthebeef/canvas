@@ -23,51 +23,39 @@ if (!Array.prototype.removeAtIndex) {
 
 function sketchProc(p){
 
-    VerticalPyramid.prototype = new Shape();
-
-    VerticalPyramid.prototype.rotationPoint = null;
-
-    VerticalPyramid.prototype.rotatePointX = function(zenithrad){
-        this.rotateVertexX(this.shapeArgs[0], zenithrad, this.rotationPoint);
+    function Sphere(position, rsize, color, extraArgs){
+       // console.dir(position);
+       Shape.apply(this, [function(radius){p.sphere(radius);}, [rsize], color, position, extraArgs]);
     };
+    Sphere.prototype = new Shape();
 
-    var XPos = 0.0;
-    var YPos = 0.0;
-    var ZPos = 0.0;
-
-    var rotation = p.radians(45);
-
-    var backgroundColor = 255;
-
-    var legs = new Legs(0, 220, 0, rotation, 180);
-    var body = new Body(0, 260, 0, 40, 40, 20, 80);
-    var world = new World(0, 0, 0, 200, 255, rotation);
-    var head = new Head(0, 300, 0, 20);
-    var pencil = new Pencil();
-
-    p.setup = function(){
-        p.size(600, 400, p.OPENGL);
-        p.frameRate(1);
-        p.background(backgroundColor);
-        XPos = p.width/2;
-        YPos = p.height;
+    function Box(position, xsize, ysize, zsize, color, extraArgs){
+       this.dimensions = [xsize, ysize, zsize];
+       Shape.apply(this, [function(x,y,z){p.box(x,y,z);}, this.dimensions, color, position, extraArgs]);
     };
+    Box.prototype = new Shape();
+    Box.prototype.dimensions = null;
 
-    p.draw = function(){
-
-        p.background(backgroundColor);
-
-        pencil.draw(head);
-        pencil.draw(body);
-        pencil.draw(legs);
-        pencil.draw(world);
-    };
 
     function Head(xpos, ypos, zpos, rsize, color){
         var position = new LinkedVertex(xpos, ypos, zpos);
         Sphere.apply(this, [position, rsize, color, {}]);
     };
     Head.prototype = new Sphere();
+
+
+    VerticalPyramid.prototype.rotatePointX = function(zenithrad){
+        this.rotateVertexX(this.shapeArgs[0], zenithrad, this.rotationPoint);
+    };
+    VerticalPyramid.prototype = new Shape();
+    VerticalPyramid.prototype.rotationPoint = null;
+
+
+    function Body(xpos, ypos, zpos, xsize, ysize, zsize, color){
+        var position = new LinkedVertex(xpos, ypos, zpos);
+        Box.apply(this, [position, xsize, ysize, zsize, color, {}]);
+    };
+    Body.prototype = new Box();
 
     function World(xpos, ypos, zpos, rsize, color, rotate){
         var r = 0.0;
@@ -84,27 +72,42 @@ function sketchProc(p){
        Sphere.apply(this, [position, rsize, color, extraArgs]);
     };
     World.prototype = new Sphere();
- 
-    function Sphere(position, rsize, color, extraArgs){
-       // console.dir(position);
-       Shape.apply(this, [p.sphere, [rsize], color, position, extraArgs]);
-    };
-    Sphere.prototype = new Shape();
+  
+    var XPos = 0.0;
+    var YPos = 0.0;
+    var ZPos = 0.0;
 
-    function Body(xpos, ypos, zpos, xsize, ysize, zsize, color){
-        var position = new LinkedVertex(xpos, ypos, zpos);
-        Box.apply(this, [position, xsize, ysize, zsize, color, {}]);
-    };
-    Body.prototype = new Box();
+    var rotation = p.radians(45);
 
-    function Box(position, xsize, ysize, zsize, color, extraArgs){
-       this.dimensions = [xsize, ysize, zsize];
-       Shape.apply(this, [p.box, this.dimensions, color, position, extraArgs]);
-    };
-    Box.prototype = new Shape();
-    Box.prototype.dimensions = null;
+    var backgroundColor = 255;
 
-    function Pencil(){
+    var legs = new Legs(0, 220, 0, rotation, 180);
+    var body = new Body(0, 260, 0, 40, 40, 20, 80);
+    var world = new World(0, 0, 0, 200, 255, rotation);
+    var head = new Head(0, 300, 0, 20);
+    var pencil = new Pencil();
+
+    p.setup = function(){
+        p.size(600, 400, p.OPENGL);
+        p.noLoop();
+        p.background(backgroundColor);
+        XPos = p.width/2;
+        YPos = p.height;
+
+         p.background(backgroundColor);
+
+        pencil.draw(head);
+        pencil.draw(body);
+        pencil.draw(legs);
+        pencil.draw(world);
+    };
+
+    p.draw = function(){
+
+   };
+
+
+   function Pencil(){
 
         var setUp = function(color, position, extraArgs){
             p.pushMatrix();
@@ -131,11 +134,25 @@ function sketchProc(p){
             p.popMatrix();
         };
 
-        /* When it desired to draw a shape using an existing processing function */
-        this.draw = function(shape){
-            setUp(shape.color, shape.position, shape.extraArgs);
-            shape.shapeFunction.apply(this, shape.shapeArgs);
-            tearDown();
+        /*
+         * This can be an existing function or one created with vertexShape it can also
+         * be a collection of shapes which form object
+         *
+         * In this case it must return an array of shapes 
+         */
+        this.draw = function(object){
+            if(object instanceof Shape){
+                setUp(object.color, object.position, object.extraArgs);
+                object.shapeFunction.apply(this, object.shapeArgs);
+                tearDown();
+            }
+            else {
+                object.shapes.forEach(function(shape, index, arr){
+                    setUp(shape.color, shape.position, shape.extraArgs);
+                    shape.shapeFunction.apply(this, shape.shapeArgs);
+                    tearDown();
+                });
+            }
         };
      };
 
@@ -154,27 +171,23 @@ function sketchProc(p){
         var leftLeg = new Leg(p.cos(-_rotate)*(_xpos + 10), _ypos, p.sin(-_rotate)*(_zpos + 10), _rotate, _color);
         var rightLeg = new Leg(p.cos(-_rotate)*(_xpos + -10), _ypos, p.sin(-_rotate)*(_zpos + -10), _rotate, _color);
 
+        this.shapes = [leftLeg, rightLeg];
+
         this.walk = function(){
             switch(state){
                 case LEFT_FOOT_FORWARD:
                     leftLeg.stepBack();
-                    pencil.draw(leftLeg);
                     rightLeg.stepForward();
-                    pencil.draw(rightLeg);
                     state = RIGHT_FOOT_FORWARD;
                     break;
                 case RIGHT_FOOT_FORWARD:
                     rightLeg.stepBack();
-                    pencil.draw(rightLeg);
                     leftLeg.stepForward();
-                    pencil.draw(leftLeg);
                     state = LEFT_FOOT_FORWARD;
                     break;
                 default:
                     leftLeg.stepForward();
-                    pencil.draw(leftLeg);
                     rightLeg.stepBack();
-                    pencil.draw(rightLeg);
                     state = LEFT_FOOT_FORWARD;
                     break;
             };
@@ -192,6 +205,8 @@ function sketchProc(p){
         var _position = new LinkedVertex(xpos, ypos, zpos);
         var _rotate = rotate;
         var _extraArgs = {};
+
+        VerticalPyramid.apply(this, [10, 40, color, _position, {}]);
 
         this.step = function(rad){
             _vp.rotatePointX(rad);
@@ -262,7 +277,7 @@ function sketchProc(p){
 
     Shape.prototype.color = null; 
     Shape.prototype.position = null;
-    Shape.prototype.args = null;
+    Shape.prototype.shapeArgs = null;
     Shape.prototype.shapeFunction = null;
     Shape.prototype.extraArgs = null;
 
@@ -286,7 +301,7 @@ function sketchProc(p){
 
         this.rotationPoint  = new LinkedVertex(0, -l/2, 0, "rp");
 
-        Shape.apply(this, [vertexShape, [point, b1, b2, b3, b4], color, position, extraArgs]);
+        Shape.apply(this, [vertexShape, [[point, b1, b2, b3, b4]], color, position, extraArgs]);
 
         point.joins = [b1, b2, b3, b4];
         b1.joins = [point, b4, b2];
@@ -294,47 +309,47 @@ function sketchProc(p){
         b3.joins = [point, b2, b4];
         b4.joins = [point, b3, b1];
     };    
-}
 
-function vertexShape(_vertices){
+    function vertexShape(_vertices){
 
-    // need to make mutable copy so I can remove elements when processed
-    var vertices = _vertices.slice(0);
+        // need to make mutable copy so I can remove elements when processed
+        var vertices = _vertices.slice(0);
 
-    p.beginShape();
-    // draw first point
-    vertices[0].draw();
-    (function recursiveDraw(vertex){
-        var vertexJoins = vertex.joins;
-        if(vertexJoins.length > 0){
-            // save joins so they can be restored fter cyling through and eliminating
-            // processed joins
-            var vertexJoinsCopy = vertexJoins.slice(0);
-            // cycle through joins of current vertices
-            vertexJoins.forEach(function(element, index, arr){
-                // if joined vertex has been processed we don't need to do it again
-                element.draw();
-                // remove the line we are about to draw
-                arr.removeAtIndex(index);
-                // Need to remove vertex from next element so it won't redraw this line
-                element.joins.remove(vertex);
-                recursiveDraw(element);
-            });
-            // replace with copy of joins as actual joins have all been removed
-            // during processing
-            vertex.joins = vertexJoinsCopy;
-        }
-        else{
-            vertices.remove(vertex);
-            var nextVertex = vertices.pop();
-            if(nextVertex != undefined){
-                // draw new vertex so you get
-                nextVertex.draw();
-                recursiveDraw(nextVertex);
+        p.beginShape();
+        // draw first point
+        vertices[0].draw();
+        (function recursiveDraw(vertex){
+            var vertexJoins = vertex.joins;
+            if(vertexJoins.length > 0){
+                // save joins so they can be restored fter cyling through and eliminating
+                // processed joins
+                var vertexJoinsCopy = vertexJoins.slice(0);
+                // cycle through joins of current vertices
+                vertexJoins.forEach(function(element, index, arr){
+                    // if joined vertex has been processed we don't need to do it again
+                    element.draw();
+                    // remove the line we are about to draw
+                    arr.removeAtIndex(index);
+                    // Need to remove vertex from next element so it won't redraw this line
+                    element.joins.remove(vertex);
+                    recursiveDraw(element);
+                });
+                // replace with copy of joins as actual joins have all been removed
+                // during processing
+                vertex.joins = vertexJoinsCopy;
             }
-        }
-    })(vertices[0]);
+            else{
+                vertices.remove(vertex);
+                var nextVertex = vertices.pop();
+                if(nextVertex != undefined){
+                    // draw new vertex so you get
+                    nextVertex.draw();
+                    recursiveDraw(nextVertex);
+                }
+            }
+        })(vertices[0]);
 
-    p.endShape();
+        p.endShape();
+    }
+
 }
-
