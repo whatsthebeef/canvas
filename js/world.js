@@ -57,76 +57,52 @@ function sketchProc(p){
 
         p.background(backgroundColor);
 
-        head.draw();
-
-        body.draw();
-
-        legs.walk();
-
-        world.turn();
+        pencil.draw(head);
+        pencil.draw(body);
+        pencil.draw(legs);
+        pencil.draw(world);
     };
 
     function Head(xpos, ypos, zpos, rsize, color){
-        var _head = new Sphere(xpos, ypos, zpos, rsize, color);
-
-        this.draw = function(){
-            _head.draw();
-        };
+        var position = new LinkedVertex(xpos, ypos, zpos);
+        Sphere.apply(this, [position, rsize, color, {}]);
     };
+    Head.prototype = new Sphere();
 
     function World(xpos, ypos, zpos, rsize, color, rotate){
-        var _world = new Sphere(xpos, ypos, zpos, rsize, color, rotate);
-
-        this.turn = function(){
-            _world.rotateDraw();
-        };
-    };
- 
-    function Body(xpos, ypos, zpos, xsize, ysize, zsize, color){
-
-        var _color = color;
-        var _xpos = xpos;
-        var _ypos = ypos;
-        var _zpos = zpos;
-        var _xsize = xsize;
-        var _ysize = ysize;
-        var _zsize = zsize;
-
-        this.draw = function(){
-            pencil.draw(p.box, [_xsize, _ysize, _zsize], _color, _xpos, _ypos, _zpos);
-        };
-    };
-   
-    function Sphere(xpos, ypos, zpos, rsize, color, rotate){
-
         var r = 0.0;
-        var _xpos = xpos; 
-        var _ypos = ypos; 
-        var _zpos = zpos; 
-        var _rsize = rsize;
-        var _color = color;
-        var _rotate = rotate;
-
-
-        this.draw = function(){
-            pencil.draw(p.sphere, [_rsize], _color, _xpos, _ypos, _zpos);
+        var position = new LinkedVertex(xpos, ypos, zpos);
+        var extraArgs = {
+            hook : function(_rotate, r){
+                r += 0.01;
+                p.rotateX(p.cos(_rotate)*r);
+                p.rotateZ(p.sin(_rotate)*r);
+            }, 
+            hookArgs : [rotate, r],
+            rotation : 0 
         };
-
-        this.rotateDraw = function(){
-            r += 0.01;
-            extraArgs = {
-                hook : function(_rotate, r){
-                            p.rotateX(p.cos(_rotate)*r);
-                            p.rotateZ(p.sin(_rotate)*r);
-                       }, 
-                hookArgs : [_rotate, r],
-                rotation : 0 
-            };
-            pencil.drawWithShape(p.sphere, [_rsize], _color, _xpos, _ypos, _zpos, extraArgs);
-        };
+       Sphere.apply(this, [position, rsize, color, extraArgs]);
     };
-
+    World.prototype = new Sphere();
+ 
+    function Sphere(position, rsize, color, extraArgs){
+       // console.dir(position);
+       Shape.apply(this, [p.sphere, [rsize], color, position, extraArgs]);
+    };
     Sphere.prototype = new Shape();
+
+    function Body(xpos, ypos, zpos, xsize, ysize, zsize, color){
+        var position = new LinkedVertex(xpos, ypos, zpos);
+        Box.apply(this, [position, xsize, ysize, zsize, color, {}]);
+    };
+    Body.prototype = new Box();
+
+    function Box(position, xsize, ysize, zsize, color, extraArgs){
+       this.dimensions = [xsize, ysize, zsize];
+       Shape.apply(this, [p.box, this.dimensions, color, position, extraArgs]);
+    };
+    Box.prototype = new Shape();
+    Box.prototype.dimensions = null;
 
     function Pencil(){
 
@@ -156,12 +132,11 @@ function sketchProc(p){
         };
 
         /* When it desired to draw a shape using an existing processing function */
-        this.draw = function(shapeFunction, shapeArgs, color, position, extraArgs){
-            setUp(color, position, extraArgs);
-            shapeFunction.apply(shapeFunction, shapeArgs);
+        this.draw = function(shape){
+            setUp(shape.color, shape.position, shape.extraArgs);
+            shape.shapeFunction.apply(this, shape.shapeArgs);
             tearDown();
         };
-
      };
 
     function Legs(xpos, ypos, zpos, rotate, color){
@@ -217,19 +192,6 @@ function sketchProc(p){
         var _position = new LinkedVertex(xpos, ypos, zpos);
         var _rotate = rotate;
         var _extraArgs = {};
-        var _vp = new VerticalPyramid(10, 40, _color, _position, _extraArgs);
-
-        this.vertices = function(){
-            return _vp.vertices();
-        };
-
-        this.color = function(){
-            return _color;
-        };
-
-        this.position = function(){
-            return _position;
-        };
 
         this.step = function(rad){
             _vp.rotatePointX(rad);
@@ -247,6 +209,7 @@ function sketchProc(p){
             this.step(0);
         };
     };
+    Leg.prototype = new VerticalPyramid();
 
     function LinkedVertex(xpos, ypos, zpos, vname){
         this.vname = vname || "default";
