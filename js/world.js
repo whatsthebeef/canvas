@@ -24,40 +24,11 @@ if (!Array.prototype.removeAtIndex) {
 function sketchProc(p){
 
     function LinkedVertex(xpos, ypos, zpos, vname){
-        this.vname = vname || "default";
         this.xpos = xpos;
         this.ypos = ypos;
         this.zpos = zpos;
         this.joins = [];
-
-        this.draw = function(){
-            // console.log(_vname);
-            p.vertex(this.xpos, this.ypos, this.zpos); 
-        };
-        this.move = function(dx, dy, dz){
-            this.xpos += dx;
-            this.ypos += dy;
-            this.zpos += dz;
-        };
-        this.rotate = function(xopos, yopos, zopos, radius, zenithrad, azimuthrad){
-            // our y direction is treated as z in spherical coords 
-            this.xpos = xopos + radius*p.cos(azimuthrad)*p.sin(zenithrad);
-            this.ypos = yopos + radius*p.cos(zenithrad);
-            this.zpos = zopos + radius*p.sin(azimuthrad)*p.sin(zenithrad);
-        };
-        this.rotateX = function(rp, radius, zenithrad){
-            this.rotate(rp.xpos, rp.ypos, rp.zpos, radius, zenithrad, p.PI/2);
-        };
-        this.rotateY = function(xopos, yopos, zopos, radius, azimuthrad){
-            this.rotate(xopos, yopos, zopos, radius, p.PI/2, azimuthrad);
-        };
-        this.rotateZ = function(xopos, yopos, zopos, radius, zenithrad){
-            this.rotate(xopos, yopos, zopos, radius, zenithrad, 0);
-        };
-        this.distanceFrom = function(vertex){
-            return Math.sqrt(Math.pow(vertex.xpos - this.xpos, 2) + Math.pow(vertex.ypos - this.ypos, 2)
-                + Math.pow(vertex.zpos - this.zpos, 2));
-        };
+        this.vname = vname || "default";
     };
 
     function Shape(shapeFunction, shapeArgs, color, position, extraArgs){
@@ -67,21 +38,18 @@ function sketchProc(p){
         this.position = position; 
         this.extraArgs = extraArgs; 
     }
-
     Shape.prototype.color = null; 
     Shape.prototype.position = null;
     Shape.prototype.shapeArgs = null;
     Shape.prototype.shapeFunction = null;
     Shape.prototype.extraArgs = null;
-
     Shape.prototype.moveVertex = function(vertexIndex, dx, dy, dz){
         this.shapeArgs[vertexIndex].move(dx, dy, dz);
     }
-
     /* vertex object or index of vertex in vertices can be passed */
     Shape.prototype.rotateVertexX = function(vertex, zenithrad, rotationPoint){
         var rotatingVertex = typeof vertex === "number" ? this.shapeArgs[vertex] : vertex; 
-        rotatingVertex.rotateX(rotationPoint, rotationPoint.distanceFrom(vertex), zenithrad);
+        rotateX(rotatingVertex, rotationPoint, distanceFrom(rotationPoint, rotatingVertex), zenithrad);
     }
 
     function Sphere(position, rsize, color, extraArgs){
@@ -211,7 +179,7 @@ function sketchProc(p){
     var YPos = 0.0;
     var ZPos = 0.0;
 
-    var rotation = p.radians(45);
+    var rotation = p.radians(0);
 
     var backgroundColor = 255;
 
@@ -221,9 +189,37 @@ function sketchProc(p){
     var head = new Head(0, 300, 0, 20);
     var pencil = new Pencil();
 
+    var objectRegister = (function(){
+        var drawnObjects = [];
+        return {
+            add : function(object){
+                drawnObjects.push(object);
+            },
+            remove : function(object){
+                drawnObjects.remove(object);
+            },
+            clear : function(){
+                drawnObjects = [];
+            },
+            select : function(x, y){
+                drawnObjects.forEach(function(element, index, arr){
+                    if(Math.sqrt(Math.pow(element.xpos - x, 2)) < 20 &&
+                        Math.sqrt(Math.pow(element.ypos - y, 2)) < 20) {
+                        alert("blah");
+                    }
+                });
+            }
+        }
+    })();
+
+    p.mousePressed = function(){
+        objectRegister.select(p.mouseX, p.mouseY);
+    }
+
     p.setup = function(){
         p.size(600, 400, p.OPENGL);
-        p.frameRate(1);
+        // p.frameRate(1);
+        p.noLoop();
         p.background(backgroundColor);
         XPos = p.width/2;
         YPos = p.height;
@@ -286,12 +282,48 @@ function sketchProc(p){
                     tearDown();
                 });
             }
+            objectRegister.add(object);
         };
      };
 
     function positionedTranslate(x, y, z){
         p.translate(XPos + x, YPos - y, ZPos + z);
     }
+
+    /* takes a positioned vertex object and draws to canvas */
+    function draw(positionedVertex){
+        p.vertex(positionedVertex.xpos, positionedVertex.ypos, positionedVertex.zpos); 
+    };
+
+    function move(vertex, dx, dy, dz){
+        vertex.xpos += dx;
+        vertex.ypos += dy;
+        vertex.zpos += dz;
+    };
+
+    function rotate(vertex, xopos, yopos, zopos, radius, zenithrad, azimuthrad){
+        // our y direction is treated as z in spherical coords 
+        vertex.xpos = xopos + radius*p.cos(azimuthrad)*p.sin(zenithrad);
+        vertex.ypos = yopos + radius*p.cos(zenithrad);
+        vertex.zpos = zopos + radius*p.sin(azimuthrad)*p.sin(zenithrad);
+    };
+
+    function rotateX(vertex, rp, radius, zenithrad){
+        rotate(vertex, rp.xpos, rp.ypos, rp.zpos, radius, zenithrad, p.PI/2);
+    };
+
+    function rotateY(vertex, xopos, yopos, zopos, radius, azimuthrad){
+        rotate(vertex, xopos, yopos, zopos, radius, p.PI/2, azimuthrad);
+    };
+
+    function rotateZ(vertex, xopos, yopos, zopos, radius, zenithrad){
+        rotate(vertex, xopos, yopos, zopos, radius, zenithrad, 0);
+    };
+
+    function distanceFrom(vertexA, vertexB){
+        return Math.sqrt(Math.pow(vertexA.xpos - vertexB.xpos, 2) + Math.pow(vertexA.ypos - vertexB.ypos, 2)
+                + Math.pow(vertexA.zpos - vertexB.zpos, 2));
+    };
 
     function vertexShape(_vertices){
 
@@ -300,7 +332,7 @@ function sketchProc(p){
 
         p.beginShape();
         // draw first point
-        vertices[0].draw();
+        draw(vertices[0]);
         (function recursiveDraw(vertex){
             var vertexJoins = vertex.joins;
             if(vertexJoins.length > 0){
@@ -310,7 +342,7 @@ function sketchProc(p){
                 // cycle through joins of current vertices
                 vertexJoins.forEach(function(element, index, arr){
                     // if joined vertex has been processed we don't need to do it again
-                    element.draw();
+                    draw(element);
                     // remove the line we are about to draw
                     arr.removeAtIndex(index);
                     // Need to remove vertex from next element so it won't redraw this line
@@ -326,7 +358,7 @@ function sketchProc(p){
                 var nextVertex = vertices.pop();
                 if(nextVertex != undefined){
                     // draw new vertex so you get
-                    nextVertex.draw();
+                    draw(nextVertex);
                     recursiveDraw(nextVertex);
                 }
             }
