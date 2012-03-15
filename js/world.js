@@ -149,6 +149,8 @@ function sketchProc(p){
         var _zpos = zpos;
         var _rotate = rotate;
 
+        this.position = new LinkedVertex(xpos, ypos, zpos);
+
         var leftLeg = new Leg(p.cos(-_rotate)*(_xpos + 10), _ypos, p.sin(-_rotate)*(_zpos + 10), _rotate, _color);
         var rightLeg = new Leg(p.cos(-_rotate)*(_xpos + -10), _ypos, p.sin(-_rotate)*(_zpos + -10), _rotate, _color);
 
@@ -202,10 +204,13 @@ function sketchProc(p){
                 drawnObjects = [];
             },
             select : function(x, y){
+               // take into account canvas translation
                 drawnObjects.forEach(function(element, index, arr){
-                    if(Math.sqrt(Math.pow(element.xpos - x, 2)) < 20 &&
-                        Math.sqrt(Math.pow(element.ypos - y, 2)) < 20) {
-                        alert("blah");
+                    console.log("shape : ", element.position.xpos, element.position.ypos);
+                    console.log("mouse : ", x - XPos, y);
+                    if(Math.sqrt(Math.pow(element.position.xpos - (x - XPos), 2)) < 50 &&
+                        Math.sqrt(Math.pow(element.position.ypos - y, 2)) < 50) {
+                        objectSelected(element);
                     }
                 });
             }
@@ -229,10 +234,10 @@ function sketchProc(p){
 
     p.draw = function(){
         pencil.draw(head);
-        pencil.draw(body);
+        // pencil.draw(body);
         legs.walk();
-        pencil.draw(legs);
-        pencil.draw(world);
+        // pencil.draw(legs);
+        // pencil.draw(world);
    };
 
    function Pencil(){
@@ -288,6 +293,13 @@ function sketchProc(p){
 
     function positionedTranslate(x, y, z){
         p.translate(XPos + x, YPos - y, ZPos + z);
+    }
+
+    function objectSelected(object){
+        var originalColor = object.color;
+        object.color = 0xFF0000;
+        console.log("selected");
+        p.draw();
     }
 
     /* takes a positioned vertex object and draws to canvas */
