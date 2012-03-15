@@ -106,7 +106,6 @@ function sketchProc(p){
         var extraArgs = {
             hook : function(_rotate, self){
                 self.r += 0.01;
-                console.log(self.r);
                 p.rotateX(p.cos(_rotate)*self.r);
                 p.rotateZ(p.sin(_rotate)*self.r);
             }, 
@@ -117,9 +116,8 @@ function sketchProc(p){
     };
     World.prototype = new Sphere();
   
-    function Leg(xpos, ypos, zpos, rotate, color){
+    function Leg(xpos, ypos, zpos, color){
         var _position = new LinkedVertex(xpos, ypos, zpos);
-        var _rotate = rotate;
         VerticalPyramid.apply(this, [10, 40, color, _position, {}]);
     };
     Leg.prototype = new VerticalPyramid();
@@ -137,7 +135,7 @@ function sketchProc(p){
             this.step(0);
     };
 
-    function Legs(xpos, ypos, zpos, rotate, color){
+    function Legs(xpos, ypos, zpos, color){
         var RIGHT_FOOT_FORWARD = 0;
         var LEFT_FOOT_FORWARD = 1;
 
@@ -151,8 +149,8 @@ function sketchProc(p){
 
         this.position = new LinkedVertex(xpos, ypos, zpos);
 
-        var leftLeg = new Leg(p.cos(-_rotate)*(_xpos + 10), _ypos, p.sin(-_rotate)*(_zpos + 10), _rotate, _color);
-        var rightLeg = new Leg(p.cos(-_rotate)*(_xpos + -10), _ypos, p.sin(-_rotate)*(_zpos + -10), _rotate, _color);
+        var leftLeg = new Leg(p.cos(-rotation)*(10) + xpos, _ypos, p.sin(-rotation)*(10) + zpos, rotation, _color);
+        var rightLeg = new Leg(p.cos(-rotation)*(-10) + xpos, _ypos, p.sin(-rotation)*(-10) + zpos, rotation, _color);
 
         this.shapes = [leftLeg, rightLeg];
 
@@ -181,15 +179,37 @@ function sketchProc(p){
     var YPos = 0.0;
     var ZPos = 0.0;
 
-    var rotation = p.radians(0);
+    var rotation = p.radians(90);
 
     var backgroundColor = 255;
 
-    var legs = new Legs(0, 220, 0, rotation, 180);
-    var body = new Body(0, 260, 0, 40, 40, 20, 80);
-    var world = new World(0, 0, 0, 200, 255, rotation);
-    var head = new Head(0, 300, 0, 20);
+    var head = new Head(300, 100, 0, 20);
+    var body = new Body(300, 140, 0, 40, 40, 20, 80);
+    var legs = new Legs(300, 180, 0, 255);
+    var world = new World(300, 400, 0, 200, 255, rotation);
     var pencil = new Pencil();
+    p.mousePressed = function(){
+        objectRegister.select(p.mouseX, p.mouseY);
+    }
+
+    p.setup = function(){
+        p.size(600, 400, p.OPENGL);
+        p.frameRate(1);
+        // p.noLoop();
+        XPos = 0;
+        YPos = 0;
+    };
+
+    p.draw = function(){
+        p.background(backgroundColor);
+
+        pencil.draw(head);
+        pencil.draw(body);
+        legs.walk();
+        pencil.draw(legs);
+        // pencil.draw(leftLeg);
+        pencil.draw(world);
+   };
 
     var objectRegister = (function(){
         var drawnObjects = [];
@@ -216,29 +236,6 @@ function sketchProc(p){
             }
         }
     })();
-
-    p.mousePressed = function(){
-        objectRegister.select(p.mouseX, p.mouseY);
-    }
-
-    p.setup = function(){
-        p.size(600, 400, p.OPENGL);
-        // p.frameRate(1);
-        p.noLoop();
-        p.background(backgroundColor);
-        XPos = p.width/2;
-        YPos = p.height;
-
-        p.background(backgroundColor);
-    };
-
-    p.draw = function(){
-        pencil.draw(head);
-        // pencil.draw(body);
-        legs.walk();
-        // pencil.draw(legs);
-        // pencil.draw(world);
-   };
 
    function Pencil(){
 
@@ -287,12 +284,13 @@ function sketchProc(p){
                     tearDown();
                 });
             }
+            console.log(object.position);
             objectRegister.add(object);
         };
      };
 
     function positionedTranslate(x, y, z){
-        p.translate(XPos + x, YPos - y, ZPos + z);
+        p.translate(XPos + x, YPos + y, ZPos + z);
     }
 
     function objectSelected(object){
