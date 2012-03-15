@@ -179,7 +179,7 @@ function sketchProc(p){
     var YPos = 0.0;
     var ZPos = 0.0;
 
-    var rotation = p.radians(90);
+    var rotation = p.radians(0);
 
     var backgroundColor = 255;
 
@@ -188,14 +188,11 @@ function sketchProc(p){
     var legs = new Legs(300, 180, 0, 255);
     var world = new World(300, 400, 0, 200, 255, rotation);
     var pencil = new Pencil();
-    p.mousePressed = function(){
-        objectRegister.select(p.mouseX, p.mouseY);
-    }
 
     p.setup = function(){
         p.size(600, 400, p.OPENGL);
-        p.frameRate(1);
-        // p.noLoop();
+        // p.frameRate(1);
+        p.noLoop();
         XPos = 0;
         YPos = 0;
     };
@@ -213,6 +210,7 @@ function sketchProc(p){
 
     var objectRegister = (function(){
         var drawnObjects = [];
+        var selectedObject = null;
         return {
             add : function(object){
                 drawnObjects.push(object);
@@ -226,16 +224,43 @@ function sketchProc(p){
             select : function(x, y){
                // take into account canvas translation
                 drawnObjects.forEach(function(element, index, arr){
-                    console.log("shape : ", element.position.xpos, element.position.ypos);
-                    console.log("mouse : ", x - XPos, y);
-                    if(Math.sqrt(Math.pow(element.position.xpos - (x - XPos), 2)) < 50 &&
-                        Math.sqrt(Math.pow(element.position.ypos - y, 2)) < 50) {
+                    if(Math.sqrt(Math.pow(element.position.xpos - (x - XPos), 2)) < 10 &&
+                        Math.sqrt(Math.pow(element.position.ypos - y, 2)) < 10) {
                         objectSelected(element);
+                        selectedObject = element;
                     }
                 });
+            },
+            currentSelection : function(){
+                return selectedObject;
+            },
+            setCurrentSelection : function(object){
+                selectedObject = object;
             }
         }
     })();
+
+    var monitorMouse = (function(p, objectReg){
+
+        var dragged = false;
+
+        var objectReg = objectReg;
+
+        p.mousePressed = function(){
+            objectReg.select(p.mouseX, p.mouseY);
+        }
+
+        p.mouseDragged = function(){
+            dragged = true;
+        }
+
+        p.mouseReleased = function(){
+            dragged = false;
+            objectReg.currentSelection().position = new LinkedVertex(p.mouseX, p.mouseY, 0);
+            p.draw();
+        }
+
+    })(p, objectRegister);
 
    function Pencil(){
 
@@ -284,7 +309,6 @@ function sketchProc(p){
                     tearDown();
                 });
             }
-            console.log(object.position);
             objectRegister.add(object);
         };
      };
@@ -296,7 +320,6 @@ function sketchProc(p){
     function objectSelected(object){
         var originalColor = object.color;
         object.color = 0xFF0000;
-        console.log("selected");
         p.draw();
     }
 
