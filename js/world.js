@@ -133,15 +133,16 @@ function sketchProc(p){
     Body.prototype = new Box();
 
     function World(xpos, ypos, zpos, rsize, color, rotate){
-        var r = 0.0;
+        this.r = 0.0;
         var position = new LinkedVertex(xpos, ypos, zpos);
         var extraArgs = {
-            hook : function(_rotate, r){
-                r += 0.01;
-                p.rotateX(p.cos(_rotate)*r);
-                p.rotateZ(p.sin(_rotate)*r);
+            hook : function(_rotate, self){
+                self.r += 0.01;
+                console.log(self.r);
+                p.rotateX(p.cos(_rotate)*self.r);
+                p.rotateZ(p.sin(_rotate)*self.r);
             }, 
-            hookArgs : [rotate, r],
+            hookArgs : [rotate, this],
             rotation : 0 
         };
        Sphere.apply(this, [position, rsize, color, extraArgs]);
@@ -227,7 +228,7 @@ function sketchProc(p){
         XPos = p.width/2;
         YPos = p.height;
 
-         p.background(backgroundColor);
+        p.background(backgroundColor);
     };
 
     p.draw = function(){
