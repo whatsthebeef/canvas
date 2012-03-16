@@ -35,10 +35,12 @@ function sketchProc(p){
         this.shapeFunction = shapeFunction; 
         this.shapeArgs = shapeArgs; 
         this.color = color; 
+        this.originalColor = color; 
         this.position = position; 
         this.extraArgs = extraArgs; 
     }
     Shape.prototype.color = null; 
+    Shape.prototype.originalColor = null; 
     Shape.prototype.position = null;
     Shape.prototype.shapeArgs = null;
     Shape.prototype.shapeFunction = null;
@@ -136,26 +138,20 @@ function sketchProc(p){
     };
 
     function Legs(xpos, ypos, zpos, color){
-        var RIGHT_FOOT_FORWARD = 0;
-        var LEFT_FOOT_FORWARD = 1;
-
-        var state = RIGHT_FOOT_FORWARD;
-        
-        var _color = color;
-        var _xpos = xpos;
-        var _ypos = ypos;
-        var _zpos = zpos;
-        var _rotate = rotate;
+        this.color = color;
 
         this.position = new LinkedVertex(xpos, ypos, zpos);
 
-        var leftLeg = new Leg(p.cos(-rotation)*(10) + xpos, _ypos, p.sin(-rotation)*(10) + zpos, rotation, _color);
-        var rightLeg = new Leg(p.cos(-rotation)*(-10) + xpos, _ypos, p.sin(-rotation)*(-10) + zpos, rotation, _color);
+        var leftLeg = new Leg(p.cos(-rotation)*(10) + xpos, ypos, p.sin(-rotation)*(10) + zpos, rotation, color);
+        var rightLeg = new Leg(p.cos(-rotation)*(-10) + xpos, ypos, p.sin(-rotation)*(-10) + zpos, rotation, color);
 
         this.shapes = [leftLeg, rightLeg];
 
-        this.walk = function(){
-            switch(state){
+        var RIGHT_FOOT_FORWARD = 0;
+        var LEFT_FOOT_FORWARD = 1;
+        var state = RIGHT_FOOT_FORWARD;
+        this.walk = function() {
+            switch(state) {
                 case LEFT_FOOT_FORWARD:
                     leftLeg.stepBack();
                     rightLeg.stepForward();
@@ -174,6 +170,8 @@ function sketchProc(p){
             };
         };
     };
+
+    var SELECTION_COLOR = 0xFF0000;
 
     var XPos = 0.0;
     var YPos = 0.0;
@@ -204,13 +202,17 @@ function sketchProc(p){
         pencil.draw(body);
         legs.walk();
         pencil.draw(legs);
-        // pencil.draw(leftLeg);
         pencil.draw(world);
    };
 
     var objectRegister = (function(){
         var drawnObjects = [];
         var selectedObject = null;
+        var objectSelect = function(object){
+            selectedObject = object;
+            selectedObject.color = SELECTION_COLOR;
+            p.draw();
+        };
         return {
             add : function(object){
                 drawnObjects.push(object);
@@ -222,20 +224,23 @@ function sketchProc(p){
                 drawnObjects = [];
             },
             select : function(x, y){
-               // take into account canvas translation
                 drawnObjects.forEach(function(element, index, arr){
                     if(Math.sqrt(Math.pow(element.position.xpos - (x - XPos), 2)) < 10 &&
                         Math.sqrt(Math.pow(element.position.ypos - y, 2)) < 10) {
-                        objectSelected(element);
-                        selectedObject = element;
+                        if(selectedObject){
+                            if(selectedObject != element) {
+                                selectedObject.color = selectedObject.originalColor;
+                                objectSelect(element);
+                           }
+                        }
+                        else {
+                            objectSelect(element);
+                        }
                     }
                 });
             },
             currentSelection : function(){
                 return selectedObject;
-            },
-            setCurrentSelection : function(object){
-                selectedObject = object;
             }
         }
     })();
@@ -255,9 +260,11 @@ function sketchProc(p){
         }
 
         p.mouseReleased = function(){
+            if(dragged){
+                objectReg.currentSelection().position = new LinkedVertex(p.mouseX, p.mouseY, 0);
+                p.draw();
+            }
             dragged = false;
-            objectReg.currentSelection().position = new LinkedVertex(p.mouseX, p.mouseY, 0);
-            p.draw();
         }
 
     })(p, objectRegister);
@@ -315,12 +322,6 @@ function sketchProc(p){
 
     function positionedTranslate(x, y, z){
         p.translate(XPos + x, YPos + y, ZPos + z);
-    }
-
-    function objectSelected(object){
-        var originalColor = object.color;
-        object.color = 0xFF0000;
-        p.draw();
     }
 
     /* takes a positioned vertex object and draws to canvas */
