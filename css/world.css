@@ -1,0 +1,18 @@
+
+body{
+    padding: 10px;
+}
+
+#canvas {
+    float : left;
+    margin: 10px;
+}
+
+.controls {
+    float: left;
+    width: 100px;
+}
+
+input {
+    width: 100px;
+}

@@ -1,14 +1,10 @@
 <?xml version="1.0"?>
 <html>
 <head>
-<script src="js/jquery-1.7.1.js">
-</script>
-<script src="js/Array+manipulations.js">
-</script>
-<script src="js/processing-1.3.6.js">
-</script>
-<script src="js/world.js">
-</script>
+<script src="js/jquery-1.7.1.js"> </script>
+<script src="js/Array+manipulations.js"> </script>
+<script src="js/processing-1.3.6.js"> </script>
+<script src="js/world.js"> </script>
 <script>
     $(document).ready(function(){
         var canvas = $("#canvas")[0];
@@ -16,8 +12,19 @@
         var processingInstance = new Processing(canvas, sketch);
     });
 </script>
+<link href="css/world.css" type="text/css" rel="stylesheet"></link>
 </head>
 <body>
 <canvas id="canvas"> </canvas>
+<div id="labels" class="controls">
+    <p><label for="size">Size</label></p>
+    <p><label for="position">Position</label></p>
+    <p><label for="color">Color</label></p>
+</div>
+<div id="inputs" class="controls">
+    <p><input type="text" name="size" id="size" placeholder="In pixels"></input></p>
+    <p><input type="text" name="position" id="position" placeholder="In pixels"></input></p>
+    <p><input type="text" name="color" id="color" placeholder="In hex scale"></input></p>
+</div>
 </body>
 </html>

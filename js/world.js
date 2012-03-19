@@ -1,7 +1,7 @@
 
 function sketchProc(p){
 
-   var SELECTION_COLOR = 0xFF0000;
+    var SELECTION_COLOR = 0xFF0000;
 
     var XPos = 0.0;
     var YPos = 0.0;
@@ -261,6 +261,12 @@ function sketchProc(p){
         var rotatingVertex = typeof vertex === "number" ? this.shapeArgs[vertex] : vertex; 
         rotateX(rotatingVertex, rotationPoint, distanceFrom(rotationPoint, rotatingVertex), zenithrad);
     }
+    // turns shape in to a string which can be passed about but removes functions and undefineds
+    Shape.prototype.stringify = function(){
+        JSON.sringify(this);
+    }
+
+    /*--------- functions which generate objects which can be passed to Shape -----*/
 
     function shape(position, color, drawFunction, args){
        return { color : color, 
@@ -392,7 +398,4 @@ function sketchProc(p){
         };
         return legs;
     };
-
-
-
 }
