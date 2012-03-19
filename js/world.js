@@ -31,19 +31,32 @@ function sketchProc(p){
         this.vname = vname || "default";
     };
 
-    function Shape(shapeFunction, shapeArgs, color, position, extraArgs){
-        this.shapeFunction = shapeFunction; 
-        this.shapeArgs = shapeArgs; 
-        this.color = color; 
-        this.originalColor = color; 
-        this.position = position; 
-        this.extraArgs = extraArgs; 
+    function Shape(args){
+        if(args.shapes){
+            this.shapes = [];
+            args.shapes.forEach(function(element, index, arr){
+                    this.shapes.push(new Shape(element));
+                    }, this);
+        }
+        this.function = args.function; 
+        this.args = args.args; 
+        this.color = args.color; 
+        this.originalColor = args.color; 
+        this.position = args.position; 
+        // There shouldn't be any prototype object so don't need to check
+        if(args.extraArgs){
+            var extraArgs = args.extraArgs;
+            for (var key in extraArgs) {
+                this[key] = extraArgs[key];
+            }
+        }
     }
+    Shape.prototype.args = null; 
+    Shape.prototype.function  = null; 
     Shape.prototype.color = null; 
     Shape.prototype.originalColor = null; 
     Shape.prototype.position = null;
-    Shape.prototype.shapeArgs = null;
-    Shape.prototype.shapeFunction = null;
+    Shape.prototype.shapes = null;
     Shape.prototype.extraArgs = null;
     Shape.prototype.moveVertex = function(vertexIndex, dx, dy, dz){
         this.shapeArgs[vertexIndex].move(dx, dy, dz);
@@ -54,25 +67,52 @@ function sketchProc(p){
         rotateX(rotatingVertex, rotationPoint, distanceFrom(rotationPoint, rotatingVertex), zenithrad);
     }
 
-    function Sphere(position, rsize, color, extraArgs){
-       Shape.apply(this, [function(radius){p.sphere(radius);}, [rsize], color, position, extraArgs]);
+    function common(position, color, drawFunction, args){
+       return { color : color, 
+                position : position, 
+                args : args,
+                function : drawFunction
+       };
     };
-    Sphere.prototype = new Shape();
 
-    function Box(position, xsize, ysize, zsize, color, extraArgs){
-       this.dimensions = [xsize, ysize, zsize];
-       Shape.apply(this, [function(x,y,z){p.box(x,y,z);}, this.dimensions, color, position, extraArgs]);
+    function sphere(position, rsize, color, extraArgs){
+       var sphere = common(position, color, function(radius){p.sphere(radius);}, [rsize]);
+       sphere.extraArgs = extraArgs; 
+       return sphere;
     };
-    Box.prototype = new Shape();
-    Box.prototype.dimensions = null;
 
-    function Head(xpos, ypos, zpos, rsize, color){
+    function box(position, xsize, ysize, zsize, color, extraArgs){
+       var box = common(position, color, function(x,y,z){p.box(x,y,z);}, [xsize, ysize, zsize]);
+       box.extraArgs = extraArgs; 
+       return box;
+    };
+
+    function body(xpos, ypos, zpos, xsize, ysize, zsize, color){
         var position = new LinkedVertex(xpos, ypos, zpos);
-        Sphere.apply(this, [position, rsize, color, {}]);
+        return box(position, xsize, ysize, zsize, color, {});
     };
-    Head.prototype = new Sphere();
 
-    function VerticalPyramid(r, l, color, position, extraArgs){
+    function head(xpos, ypos, zpos, rsize, color){
+        var position = new LinkedVertex(xpos, ypos, zpos);
+        return sphere(position, rsize, color, {});
+    };
+
+    function world(xpos, ypos, zpos, rsize, color){
+        var extraArgs = {
+            hook : function(){
+                this.r += 0.01;
+                p.rotateX(p.cos(rotation)*this.r);
+                p.rotateZ(p.sin(rotation)*this.r);
+            }, 
+            hookArgs : [],
+            rotation : 0,
+            r : 0.0, 
+        };
+        var position = new LinkedVertex(xpos, ypos, zpos);
+        return sphere(position, rsize, color, extraArgs);
+    };
+
+    function verticalPyramid(r, l, color, position, extraArgs){
 
         var point = new LinkedVertex(0, l/2, 0, "point");
         var b1 = new LinkedVertex(+r, -l/2, -r, "b1");
@@ -80,95 +120,82 @@ function sketchProc(p){
         var b3 = new LinkedVertex(-r, -l/2, +r, "b3");
         var b4 = new LinkedVertex(-r, -l/2, -r, "b4");
 
-        this.rotationPoint  = new LinkedVertex(0, -l/2, 0, "rp");
-
-        Shape.apply(this, [vertexShape, [[point, b1, b2, b3, b4]], color, position, extraArgs]);
+        extraArgs.rotationPoint  = new LinkedVertex(0, -l/2, 0, "rp");
 
         point.joins = [b1, b2, b3, b4];
         b1.joins = [point, b4, b2];
         b2.joins = [point, b1, b3];
         b3.joins = [point, b2, b4];
         b4.joins = [point, b3, b1];
+
+        extraArgs.rotatePointX = function(zenithrad){
+                this.rotateVertexX(point, zenithrad, this.rotationPoint);
+        };
+
+        var pyramid  = common(position, color, vertexShape, [[point, b1, b2, b3, b4]]);
+        pyramid.extraArgs = extraArgs;
+        return pyramid;
     };    
-    VerticalPyramid.prototype = new Shape();
-    VerticalPyramid.prototype.rotationPoint = null;
-    VerticalPyramid.prototype.rotatePointX = function(zenithrad){
-        this.rotateVertexX(this.shapeArgs[0][0], zenithrad, this.rotationPoint);
-    };
-
-    function Body(xpos, ypos, zpos, xsize, ysize, zsize, color){
-        var position = new LinkedVertex(xpos, ypos, zpos);
-        Box.apply(this, [position, xsize, ysize, zsize, color, {}]);
-    };
-    Body.prototype = new Box();
-
-    function World(xpos, ypos, zpos, rsize, color, rotate){
-        this.r = 0.0;
-        var position = new LinkedVertex(xpos, ypos, zpos);
-        var extraArgs = {
-            hook : function(_rotate, self){
-                self.r += 0.01;
-                p.rotateX(p.cos(_rotate)*self.r);
-                p.rotateZ(p.sin(_rotate)*self.r);
-            }, 
-            hookArgs : [rotate, this],
-            rotation : 0 
-        };
-       Sphere.apply(this, [position, rsize, color, extraArgs]);
-    };
-    World.prototype = new Sphere();
   
-    function Leg(xpos, ypos, zpos, color){
+    function leg(xpos, ypos, zpos, color){
         var _position = new LinkedVertex(xpos, ypos, zpos);
-        VerticalPyramid.apply(this, [10, 40, color, _position, {}]);
+        extraArgs = {
+            steprad : p.PI/4,
+            step : function(rad){
+                this.rotatePointX(rad);
+            },
+            stepForward : function(){
+                this.step(this.steprad);
+            },
+            stepBack : function(){
+                this.step(-1*this.steprad);
+            },
+            center : function(){
+                this.step(0);
+            },
+            rotation : 0
+        }
+        return verticalPyramid(10, 40, color, _position, extraArgs);
     };
-    Leg.prototype = new VerticalPyramid();
-    Leg.prototype.steprad = p.PI/4;
-    Leg.prototype.step = function(rad){
-            this.rotatePointX(rad);
-    };
-    Leg.prototype.stepForward = function(){
-            this.step(this.steprad);
-    }
-    Leg.prototype.stepBack = function(){
-            this.step(-1*this.steprad);
-    };
-    Leg.prototype.center = function(){
-            this.step(0);
-    };
 
-    function Legs(xpos, ypos, zpos, color){
-        this.color = color;
+    function legs(xpos, ypos, zpos, color){
+        var position = new LinkedVertex(xpos, ypos, zpos);
 
-        this.position = new LinkedVertex(xpos, ypos, zpos);
+        // var leftLeg = leg(p.cos(-rotation)*(10), 0, p.sin(-rotation)*(10), color);
+        // var rightLeg = leg(p.cos(-rotation)*(-10), 0, p.sin(-rotation)*(-10), color);
+        var leftLeg = leg(10, 0, 0, color);
+        var rightLeg = leg(-10, 0, 0, color);
 
-        var leftLeg = new Leg(p.cos(-rotation)*(10) + xpos, ypos, p.sin(-rotation)*(10) + zpos, rotation, color);
-        var rightLeg = new Leg(p.cos(-rotation)*(-10) + xpos, ypos, p.sin(-rotation)*(-10) + zpos, rotation, color);
+        var legs = common(position, color);
+        legs.shapes = [leftLeg, rightLeg];
 
-        this.shapes = [leftLeg, rightLeg];
-
-        var RIGHT_FOOT_FORWARD = 0;
-        var LEFT_FOOT_FORWARD = 1;
-        var state = RIGHT_FOOT_FORWARD;
-        this.walk = function() {
-            switch(state) {
-                case LEFT_FOOT_FORWARD:
-                    leftLeg.stepBack();
-                    rightLeg.stepForward();
-                    state = RIGHT_FOOT_FORWARD;
-                    break;
-                case RIGHT_FOOT_FORWARD:
-                    rightLeg.stepBack();
-                    leftLeg.stepForward();
-                    state = LEFT_FOOT_FORWARD;
-                    break;
-                default:
-                    leftLeg.stepForward();
-                    rightLeg.stepBack();
-                    state = LEFT_FOOT_FORWARD;
-                    break;
-            };
+        legs.extraArgs = {
+            RIGHT_FOOT_FORWARD : 0,
+            LEFT_FOOT_FORWARD : 1,
+            state : 0,
+            walk : function() {
+                var leftLeg = this.shapes[0];
+                var rightLeg = this.shapes[1];
+                switch(this.state) {
+                    case this.LEFT_FOOT_FORWARD:
+                        leftLeg.stepBack();
+                        rightLeg.stepForward();
+                        this.state = this.RIGHT_FOOT_FORWARD;
+                        break;
+                    case this.RIGHT_FOOT_FORWARD:
+                        rightLeg.stepBack();
+                        leftLeg.stepForward();
+                        this.state = this.LEFT_FOOT_FORWARD;
+                        break;
+                    default:
+                        leftLeg.stepForward();
+                        rightLeg.stepBack();
+                        this.state = this.LEFT_FOOT_FORWARD;
+                        break;
+                }
+            }
         };
+        return legs;
     };
 
     var SELECTION_COLOR = 0xFF0000;
@@ -181,23 +208,22 @@ function sketchProc(p){
 
     var backgroundColor = 255;
 
-    var head = new Head(300, 100, 0, 20);
-    var body = new Body(300, 140, 0, 40, 40, 20, 80);
-    var legs = new Legs(300, 180, 0, 255);
-    var world = new World(300, 400, 0, 200, 255, rotation);
+    var head = new Shape(head(300, 100, 0, 20));
+    var body = new Shape(body(300, 140, 0, 40, 40, 20, 80));
+    var legs = new Shape(legs(300, 180, 0, 255));
+    var world = new Shape(world(300, 400, 0, 200, 255));
     var pencil = new Pencil();
 
     p.setup = function(){
         p.size(600, 400, p.OPENGL);
-        // p.frameRate(1);
-        p.noLoop();
+        p.frameRate(1);
+        // p.noLoop();
         XPos = 0;
         YPos = 0;
     };
 
     p.draw = function(){
         p.background(backgroundColor);
-
         pencil.draw(head);
         pencil.draw(body);
         legs.walk();
@@ -231,7 +257,7 @@ function sketchProc(p){
                             if(selectedObject != element) {
                                 selectedObject.color = selectedObject.originalColor;
                                 objectSelect(element);
-                           }
+                            }
                         }
                         else {
                             objectSelect(element);
@@ -271,24 +297,22 @@ function sketchProc(p){
 
    function Pencil(){
 
-        var setUp = function(color, position, extraArgs){
+        var setUp = function(object){
             p.pushMatrix();
-            p.fill(color);
-            positionedTranslate(position.xpos, position.ypos, position.zpos);
-            if(extraArgs != undefined){
-                if(extraArgs.rotation != undefined){
-                    p.rotateY(extraArgs.rotation);
-                }
-                else {
-                    p.rotateY(rotation);
-                }
-                // hooks should be called after rotation
-                if(extraArgs.hook){
-                    extraArgs.hook.apply(this, extraArgs.hookArgs);
-                }
+            p.fill(object.color);
+            var position = object.position;
+            if(position){
+                positionedTranslate(position.xpos, position.ypos, position.zpos);
+            }
+            if(object.rotation != undefined){
+                p.rotateY(object.rotation);
             }
             else {
                 p.rotateY(rotation);
+            }
+            // hooks should be called after rotation
+            if(object.hook){
+                 object.hook.apply(object, extraArgs.hookArgs);
             }
         };
 
@@ -304,18 +328,16 @@ function sketchProc(p){
          */
         this.draw = function(object){
             // If not an instant of shape must be a collection of shapes
-            if(object instanceof Shape){
-                setUp(object.color, object.position, object.extraArgs);
-                object.shapeFunction.apply(this, object.shapeArgs);
-                tearDown();
+            setUp(object);
+            if(object.function){
+                object.function.apply(object, object.args);
             }
-            else {
+            if(object.shapes){
                 object.shapes.forEach(function(shape, index, arr){
-                    setUp(shape.color, shape.position, shape.extraArgs);
-                    shape.shapeFunction.apply(this, shape.shapeArgs);
-                    tearDown();
-                });
+                    this.draw(shape);
+                }, this);
             }
+            tearDown(object);
             objectRegister.add(object);
         };
      };
