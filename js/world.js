@@ -23,15 +23,8 @@ if (!Array.prototype.removeAtIndex) {
 
 function sketchProc(p){
 
-    function LinkedVertex(xpos, ypos, zpos, vname){
-        this.xpos = xpos;
-        this.ypos = ypos;
-        this.zpos = zpos;
-        this.joins = [];
-        this.vname = vname || "default";
-    };
-
     function Shape(args){
+        // Recursively create shapes and sub shapes
         if(args.shapes){
             this.shapes = [];
             args.shapes.forEach(function(element, index, arr){
@@ -44,6 +37,8 @@ function sketchProc(p){
         this.originalColor = args.color; 
         this.position = args.position; 
         // There shouldn't be any prototype object so don't need to check
+        // copy all extras to object so the functions defined can be used directly on the 
+        // objects
         if(args.extraArgs){
             var extraArgs = args.extraArgs;
             for (var key in extraArgs) {
@@ -67,7 +62,7 @@ function sketchProc(p){
         rotateX(rotatingVertex, rotationPoint, distanceFrom(rotationPoint, rotatingVertex), zenithrad);
     }
 
-    function common(position, color, drawFunction, args){
+    function shape(position, color, drawFunction, args){
        return { color : color, 
                 position : position, 
                 args : args,
@@ -76,24 +71,24 @@ function sketchProc(p){
     };
 
     function sphere(position, rsize, color, extraArgs){
-       var sphere = common(position, color, function(radius){p.sphere(radius);}, [rsize]);
+       var sphere = shape(position, color, function(radius){p.sphere(radius);}, [rsize]);
        sphere.extraArgs = extraArgs; 
        return sphere;
     };
 
     function box(position, xsize, ysize, zsize, color, extraArgs){
-       var box = common(position, color, function(x,y,z){p.box(x,y,z);}, [xsize, ysize, zsize]);
+       var box = shape(position, color, function(x,y,z){p.box(x,y,z);}, [xsize, ysize, zsize]);
        box.extraArgs = extraArgs; 
        return box;
     };
 
     function body(xpos, ypos, zpos, xsize, ysize, zsize, color){
-        var position = new LinkedVertex(xpos, ypos, zpos);
+        var position = {xpos:xpos, ypos:ypos, zpos:zpos};
         return box(position, xsize, ysize, zsize, color, {});
     };
 
     function head(xpos, ypos, zpos, rsize, color){
-        var position = new LinkedVertex(xpos, ypos, zpos);
+        var position = {xpos:xpos, ypos:ypos, zpos:zpos};
         return sphere(position, rsize, color, {});
     };
 
@@ -108,19 +103,19 @@ function sketchProc(p){
             rotation : 0,
             r : 0.0, 
         };
-        var position = new LinkedVertex(xpos, ypos, zpos);
+        var position = {xpos:xpos, ypos:ypos, zpos:zpos};
         return sphere(position, rsize, color, extraArgs);
     };
 
     function verticalPyramid(r, l, color, position, extraArgs){
 
-        var point = new LinkedVertex(0, l/2, 0, "point");
-        var b1 = new LinkedVertex(+r, -l/2, -r, "b1");
-        var b2 = new LinkedVertex(+r, -l/2, +r, "b2");
-        var b3 = new LinkedVertex(-r, -l/2, +r, "b3");
-        var b4 = new LinkedVertex(-r, -l/2, -r, "b4");
+        var point = {xpos:0, ypos:l/2, zpos:0, name:"point"};
+        var b1 = {xpos:+r, ypos:-l/2, zpos:-r, name:"b1"};
+        var b2 = {xpos:+r, ypos:-l/2, zpos:+r, name:"b2"};
+        var b3 = {xpos:-r, ypos:-l/2, zpos:+r, name:"b3"};
+        var b4 = {xpos:-r, ypos:-l/2, zpos:-r, name:"b4"};
 
-        extraArgs.rotationPoint  = new LinkedVertex(0, -l/2, 0, "rp");
+        extraArgs.rotationPoint  = {xpos:0, ypos:-l/2, zpos:0, name:"rp"};
 
         point.joins = [b1, b2, b3, b4];
         b1.joins = [point, b4, b2];
@@ -132,13 +127,13 @@ function sketchProc(p){
                 this.rotateVertexX(point, zenithrad, this.rotationPoint);
         };
 
-        var pyramid  = common(position, color, vertexShape, [[point, b1, b2, b3, b4]]);
+        var pyramid  = shape(position, color, vertexShape, [[point, b1, b2, b3, b4]]);
         pyramid.extraArgs = extraArgs;
         return pyramid;
     };    
   
     function leg(xpos, ypos, zpos, color){
-        var _position = new LinkedVertex(xpos, ypos, zpos);
+        var position = {xpos:xpos, ypos:ypos, zpos:zpos};
         extraArgs = {
             steprad : p.PI/4,
             step : function(rad){
@@ -155,18 +150,18 @@ function sketchProc(p){
             },
             rotation : 0
         }
-        return verticalPyramid(10, 40, color, _position, extraArgs);
+        return verticalPyramid(10, 40, color, position, extraArgs);
     };
 
     function legs(xpos, ypos, zpos, color){
-        var position = new LinkedVertex(xpos, ypos, zpos);
+        var position = {xpos:xpos, ypos:ypos, zpos:zpos};
 
         // var leftLeg = leg(p.cos(-rotation)*(10), 0, p.sin(-rotation)*(10), color);
         // var rightLeg = leg(p.cos(-rotation)*(-10), 0, p.sin(-rotation)*(-10), color);
         var leftLeg = leg(10, 0, 0, color);
         var rightLeg = leg(-10, 0, 0, color);
 
-        var legs = common(position, color);
+        var legs = shape(position, color);
         legs.shapes = [leftLeg, rightLeg];
 
         legs.extraArgs = {
