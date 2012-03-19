@@ -1,27 +1,227 @@
 
-if (!Array.prototype.contains) {  
-    Array.prototype.contains = function(object) {  
-        return this.indexOf(object) != -1 ? true : false;        
-    };
-}
-
-if (!Array.prototype.remove) {  
-    Array.prototype.remove = function(object) {  
-        var removeIndex = this.indexOf(object);
-        if(removeIndex != -1){
-            return this.splice(removeIndex, 1)[0]; 
-        }
-        return null;
-    };
-};
-
-if (!Array.prototype.removeAtIndex) {  
-    Array.prototype.removeAtIndex = function(index) {  
-        return this.splice(index, 1)[0]; 
-    };
-};
-
 function sketchProc(p){
+
+   var SELECTION_COLOR = 0xFF0000;
+
+    var XPos = 0.0;
+    var YPos = 0.0;
+    var ZPos = 0.0;
+
+    var rotation = p.radians(0);
+
+    var backgroundColor = 255;
+
+    var head = new Shape(head(300, 100, 0, 20));
+    var body = new Shape(body(300, 140, 0, 40, 40, 20, 80));
+    var legs = new Shape(legs(300, 180, 0, 255));
+    var world = new Shape(world(300, 400, 0, 200, 255));
+    var pencil = new Pencil();
+
+    p.setup = function(){
+        p.size(600, 400, p.OPENGL);
+        p.frameRate(1);
+        // p.noLoop();
+        XPos = 0;
+        YPos = 0;
+    };
+
+    p.draw = function(){
+        p.background(backgroundColor);
+        pencil.draw(head);
+        pencil.draw(body);
+        legs.walk();
+        pencil.draw(legs);
+        pencil.draw(world);
+   };
+
+    var objectRegister = (function(){
+        var drawnObjects = [];
+        var selectedObject = null;
+        var objectSelect = function(object){
+            selectedObject = object;
+            selectedObject.color = SELECTION_COLOR;
+            p.draw();
+        };
+        return {
+            add : function(object){
+                drawnObjects.push(object);
+            },
+            remove : function(object){
+                drawnObjects.remove(object);
+            },
+            clear : function(){
+                drawnObjects = [];
+            },
+            select : function(x, y){
+                drawnObjects.forEach(function(element, index, arr){
+                    if(Math.sqrt(Math.pow(element.position.xpos - (x - XPos), 2)) < 10 &&
+                        Math.sqrt(Math.pow(element.position.ypos - y, 2)) < 10) {
+                        if(selectedObject){
+                            if(selectedObject != element) {
+                                selectedObject.color = selectedObject.originalColor;
+                                objectSelect(element);
+                            }
+                        }
+                        else {
+                            objectSelect(element);
+                        }
+                    }
+                });
+            },
+            currentSelection : function(){
+                return selectedObject;
+            }
+        }
+    })();
+
+    var monitorMouse = (function(p, objectReg){
+
+        var dragged = false;
+
+        var objectReg = objectReg;
+
+        p.mousePressed = function(){
+            objectReg.select(p.mouseX, p.mouseY);
+        }
+
+        p.mouseDragged = function(){
+            dragged = true;
+        }
+
+        p.mouseReleased = function(){
+            if(dragged){
+                objectReg.currentSelection().position = new LinkedVertex(p.mouseX, p.mouseY, 0);
+                p.draw();
+            }
+            dragged = false;
+        }
+
+    })(p, objectRegister);
+
+   function Pencil(){
+
+        var setUp = function(object){
+            p.pushMatrix();
+            p.fill(object.color);
+            var position = object.position;
+            if(position){
+                positionedTranslate(position.xpos, position.ypos, position.zpos);
+            }
+            if(object.rotation != undefined){
+                p.rotateY(object.rotation);
+            }
+            else {
+                p.rotateY(rotation);
+            }
+            // hooks should be called after rotation
+            if(object.hook){
+                 object.hook.apply(object, extraArgs.hookArgs);
+            }
+        };
+
+        var tearDown = function(){
+            p.popMatrix();
+        };
+
+        /*
+         * Takes a Shape object and draws it
+         */
+        this.draw = function(object){
+            setUp(object);
+            if(object.function){
+                object.function.apply(object, object.args);
+            }
+            // shape may have sub shapes which is needs to draw as well
+            if(object.shapes){
+                object.shapes.forEach(function(shape, index, arr){
+                    this.draw(shape);
+                }, this);
+            }
+            tearDown(object);
+            objectRegister.add(object);
+        };
+     };
+
+    function positionedTranslate(x, y, z){
+        p.translate(XPos + x, YPos + y, ZPos + z);
+    }
+
+    /* takes a positioned vertex object and draws to canvas */
+    function draw(positionedVertex){
+        p.vertex(positionedVertex.xpos, positionedVertex.ypos, positionedVertex.zpos); 
+    };
+
+    function move(vertex, dx, dy, dz){
+        vertex.xpos += dx;
+        vertex.ypos += dy;
+        vertex.zpos += dz;
+    };
+
+    function rotate(vertex, xopos, yopos, zopos, radius, zenithrad, azimuthrad){
+        // our y direction is treated as z in spherical coords 
+        vertex.xpos = xopos + radius*p.cos(azimuthrad)*p.sin(zenithrad);
+        vertex.ypos = yopos + radius*p.cos(zenithrad);
+        vertex.zpos = zopos + radius*p.sin(azimuthrad)*p.sin(zenithrad);
+    };
+
+    function rotateX(vertex, rp, radius, zenithrad){
+        rotate(vertex, rp.xpos, rp.ypos, rp.zpos, radius, zenithrad, p.PI/2);
+    };
+
+    function rotateY(vertex, xopos, yopos, zopos, radius, azimuthrad){
+        rotate(vertex, xopos, yopos, zopos, radius, p.PI/2, azimuthrad);
+    };
+
+    function rotateZ(vertex, xopos, yopos, zopos, radius, zenithrad){
+        rotate(vertex, xopos, yopos, zopos, radius, zenithrad, 0);
+    };
+
+    function distanceFrom(vertexA, vertexB){
+        return Math.sqrt(Math.pow(vertexA.xpos - vertexB.xpos, 2) + Math.pow(vertexA.ypos - vertexB.ypos, 2)
+                + Math.pow(vertexA.zpos - vertexB.zpos, 2));
+    };
+
+    function vertexShape(_vertices){
+
+        // need to make mutable copy so I can remove elements when processed
+        var vertices = _vertices.slice(0);
+
+        p.beginShape();
+        // draw first point
+        draw(vertices[0]);
+        (function recursiveDraw(vertex){
+            var vertexJoins = vertex.joins;
+            if(vertexJoins.length > 0){
+                // save joins so they can be restored fter cyling through and eliminating
+                // processed joins
+                var vertexJoinsCopy = vertexJoins.slice(0);
+                // cycle through joins of current vertices
+                vertexJoins.forEach(function(element, index, arr){
+                    // if joined vertex has been processed we don't need to do it again
+                    draw(element);
+                    // remove the line we are about to draw
+                    arr.removeAtIndex(index);
+                    // Need to remove vertex from next element so it won't redraw this line
+                    element.joins.remove(vertex);
+                    recursiveDraw(element);
+                });
+                // replace with copy of joins as actual joins have all been removed
+                // during processing
+                vertex.joins = vertexJoinsCopy;
+            }
+            else{
+                vertices.remove(vertex);
+                var nextVertex = vertices.pop();
+                if(nextVertex != undefined){
+                    // draw new vertex so you get
+                    draw(nextVertex);
+                    recursiveDraw(nextVertex);
+                }
+            }
+        })(vertices[0]);
+
+        p.endShape();
+    }
 
     function Shape(args){
         // Recursively create shapes and sub shapes
@@ -193,229 +393,6 @@ function sketchProc(p){
         return legs;
     };
 
-    var SELECTION_COLOR = 0xFF0000;
 
-    var XPos = 0.0;
-    var YPos = 0.0;
-    var ZPos = 0.0;
-
-    var rotation = p.radians(0);
-
-    var backgroundColor = 255;
-
-    var head = new Shape(head(300, 100, 0, 20));
-    var body = new Shape(body(300, 140, 0, 40, 40, 20, 80));
-    var legs = new Shape(legs(300, 180, 0, 255));
-    var world = new Shape(world(300, 400, 0, 200, 255));
-    var pencil = new Pencil();
-
-    p.setup = function(){
-        p.size(600, 400, p.OPENGL);
-        p.frameRate(1);
-        // p.noLoop();
-        XPos = 0;
-        YPos = 0;
-    };
-
-    p.draw = function(){
-        p.background(backgroundColor);
-        pencil.draw(head);
-        pencil.draw(body);
-        legs.walk();
-        pencil.draw(legs);
-        pencil.draw(world);
-   };
-
-    var objectRegister = (function(){
-        var drawnObjects = [];
-        var selectedObject = null;
-        var objectSelect = function(object){
-            selectedObject = object;
-            selectedObject.color = SELECTION_COLOR;
-            p.draw();
-        };
-        return {
-            add : function(object){
-                drawnObjects.push(object);
-            },
-            remove : function(object){
-                drawnObjects.remove(object);
-            },
-            clear : function(){
-                drawnObjects = [];
-            },
-            select : function(x, y){
-                drawnObjects.forEach(function(element, index, arr){
-                    if(Math.sqrt(Math.pow(element.position.xpos - (x - XPos), 2)) < 10 &&
-                        Math.sqrt(Math.pow(element.position.ypos - y, 2)) < 10) {
-                        if(selectedObject){
-                            if(selectedObject != element) {
-                                selectedObject.color = selectedObject.originalColor;
-                                objectSelect(element);
-                            }
-                        }
-                        else {
-                            objectSelect(element);
-                        }
-                    }
-                });
-            },
-            currentSelection : function(){
-                return selectedObject;
-            }
-        }
-    })();
-
-    var monitorMouse = (function(p, objectReg){
-
-        var dragged = false;
-
-        var objectReg = objectReg;
-
-        p.mousePressed = function(){
-            objectReg.select(p.mouseX, p.mouseY);
-        }
-
-        p.mouseDragged = function(){
-            dragged = true;
-        }
-
-        p.mouseReleased = function(){
-            if(dragged){
-                objectReg.currentSelection().position = new LinkedVertex(p.mouseX, p.mouseY, 0);
-                p.draw();
-            }
-            dragged = false;
-        }
-
-    })(p, objectRegister);
-
-   function Pencil(){
-
-        var setUp = function(object){
-            p.pushMatrix();
-            p.fill(object.color);
-            var position = object.position;
-            if(position){
-                positionedTranslate(position.xpos, position.ypos, position.zpos);
-            }
-            if(object.rotation != undefined){
-                p.rotateY(object.rotation);
-            }
-            else {
-                p.rotateY(rotation);
-            }
-            // hooks should be called after rotation
-            if(object.hook){
-                 object.hook.apply(object, extraArgs.hookArgs);
-            }
-        };
-
-        var tearDown = function(){
-            p.popMatrix();
-        };
-
-        /*
-         * This can be an existing function or one created with vertexShape it can also
-         * be a collection of shapes which form object
-         *
-         * In this case it must return an array of shapes 
-         */
-        this.draw = function(object){
-            // If not an instant of shape must be a collection of shapes
-            setUp(object);
-            if(object.function){
-                object.function.apply(object, object.args);
-            }
-            if(object.shapes){
-                object.shapes.forEach(function(shape, index, arr){
-                    this.draw(shape);
-                }, this);
-            }
-            tearDown(object);
-            objectRegister.add(object);
-        };
-     };
-
-    function positionedTranslate(x, y, z){
-        p.translate(XPos + x, YPos + y, ZPos + z);
-    }
-
-    /* takes a positioned vertex object and draws to canvas */
-    function draw(positionedVertex){
-        p.vertex(positionedVertex.xpos, positionedVertex.ypos, positionedVertex.zpos); 
-    };
-
-    function move(vertex, dx, dy, dz){
-        vertex.xpos += dx;
-        vertex.ypos += dy;
-        vertex.zpos += dz;
-    };
-
-    function rotate(vertex, xopos, yopos, zopos, radius, zenithrad, azimuthrad){
-        // our y direction is treated as z in spherical coords 
-        vertex.xpos = xopos + radius*p.cos(azimuthrad)*p.sin(zenithrad);
-        vertex.ypos = yopos + radius*p.cos(zenithrad);
-        vertex.zpos = zopos + radius*p.sin(azimuthrad)*p.sin(zenithrad);
-    };
-
-    function rotateX(vertex, rp, radius, zenithrad){
-        rotate(vertex, rp.xpos, rp.ypos, rp.zpos, radius, zenithrad, p.PI/2);
-    };
-
-    function rotateY(vertex, xopos, yopos, zopos, radius, azimuthrad){
-        rotate(vertex, xopos, yopos, zopos, radius, p.PI/2, azimuthrad);
-    };
-
-    function rotateZ(vertex, xopos, yopos, zopos, radius, zenithrad){
-        rotate(vertex, xopos, yopos, zopos, radius, zenithrad, 0);
-    };
-
-    function distanceFrom(vertexA, vertexB){
-        return Math.sqrt(Math.pow(vertexA.xpos - vertexB.xpos, 2) + Math.pow(vertexA.ypos - vertexB.ypos, 2)
-                + Math.pow(vertexA.zpos - vertexB.zpos, 2));
-    };
-
-    function vertexShape(_vertices){
-
-        // need to make mutable copy so I can remove elements when processed
-        var vertices = _vertices.slice(0);
-
-        p.beginShape();
-        // draw first point
-        draw(vertices[0]);
-        (function recursiveDraw(vertex){
-            var vertexJoins = vertex.joins;
-            if(vertexJoins.length > 0){
-                // save joins so they can be restored fter cyling through and eliminating
-                // processed joins
-                var vertexJoinsCopy = vertexJoins.slice(0);
-                // cycle through joins of current vertices
-                vertexJoins.forEach(function(element, index, arr){
-                    // if joined vertex has been processed we don't need to do it again
-                    draw(element);
-                    // remove the line we are about to draw
-                    arr.removeAtIndex(index);
-                    // Need to remove vertex from next element so it won't redraw this line
-                    element.joins.remove(vertex);
-                    recursiveDraw(element);
-                });
-                // replace with copy of joins as actual joins have all been removed
-                // during processing
-                vertex.joins = vertexJoinsCopy;
-            }
-            else{
-                vertices.remove(vertex);
-                var nextVertex = vertices.pop();
-                if(nextVertex != undefined){
-                    // draw new vertex so you get
-                    draw(nextVertex);
-                    recursiveDraw(nextVertex);
-                }
-            }
-        })(vertices[0]);
-
-        p.endShape();
-    }
 
 }
