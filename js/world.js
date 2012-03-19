@@ -140,14 +140,68 @@ function sketchProc(p){
             tearDown(object);
             objectRegister.add(object);
         };
-     };
 
-    function positionedTranslate(x, y, z){
-        p.translate(XPos + x, YPos + y, ZPos + z);
-    }
+        this.sphere = function(radius){
+            p.sphere(radius);
+        }
 
-    /* takes a positioned vertex object and draws to canvas */
-    function draw(positionedVertex){
+        this.box = function(x, y, z){
+            p.sphere(x, y, z);
+        }
+
+        this.vertexShape = function(vertices){
+            vertexShape(vertices);
+        }
+
+        function vertexShape(_vertices){
+
+            // need to make mutable copy so I can remove elements when processed
+            var vertices = _vertices.slice(0);
+
+            p.beginShape();
+            // draw first point
+            draw(vertices[0]);
+            (function recursiveDraw(vertex){
+             var vertexJoins = vertex.joins;
+             if(vertexJoins.length > 0){
+             // save joins so they can be restored fter cyling through and eliminating
+             // processed joins
+             var vertexJoinsCopy = vertexJoins.slice(0);
+             // cycle through joins of current vertices
+             vertexJoins.forEach(function(element, index, arr){
+                 // if joined vertex has been processed we don't need to do it again
+                 draw(element);
+                 // remove the line we are about to draw
+                 arr.removeAtIndex(index);
+                 // Need to remove vertex from next element so it won't redraw this line
+                    element.joins.remove(vertex);
+                    recursiveDraw(element);
+                });
+                // replace with copy of joins as actual joins have all been removed
+                // during processing
+                vertex.joins = vertexJoinsCopy;
+            }
+            else{
+                vertices.remove(vertex);
+                var nextVertex = vertices.pop();
+                if(nextVertex != undefined){
+                    // draw new vertex so you get
+                    draw(nextVertex);
+                    recursiveDraw(nextVertex);
+                }
+            }
+            })(vertices[0]);
+
+            p.endShape();
+        }
+   };
+
+   function positionedTranslate(x, y, z){
+       p.translate(XPos + x, YPos + y, ZPos + z);
+   }
+
+   /* takes a positioned vertex object and draws to canvas */
+   function draw(positionedVertex){
         p.vertex(positionedVertex.xpos, positionedVertex.ypos, positionedVertex.zpos); 
     };
 
@@ -180,48 +234,6 @@ function sketchProc(p){
         return Math.sqrt(Math.pow(vertexA.xpos - vertexB.xpos, 2) + Math.pow(vertexA.ypos - vertexB.ypos, 2)
                 + Math.pow(vertexA.zpos - vertexB.zpos, 2));
     };
-
-    function vertexShape(_vertices){
-
-        // need to make mutable copy so I can remove elements when processed
-        var vertices = _vertices.slice(0);
-
-        p.beginShape();
-        // draw first point
-        draw(vertices[0]);
-        (function recursiveDraw(vertex){
-            var vertexJoins = vertex.joins;
-            if(vertexJoins.length > 0){
-                // save joins so they can be restored fter cyling through and eliminating
-                // processed joins
-                var vertexJoinsCopy = vertexJoins.slice(0);
-                // cycle through joins of current vertices
-                vertexJoins.forEach(function(element, index, arr){
-                    // if joined vertex has been processed we don't need to do it again
-                    draw(element);
-                    // remove the line we are about to draw
-                    arr.removeAtIndex(index);
-                    // Need to remove vertex from next element so it won't redraw this line
-                    element.joins.remove(vertex);
-                    recursiveDraw(element);
-                });
-                // replace with copy of joins as actual joins have all been removed
-                // during processing
-                vertex.joins = vertexJoinsCopy;
-            }
-            else{
-                vertices.remove(vertex);
-                var nextVertex = vertices.pop();
-                if(nextVertex != undefined){
-                    // draw new vertex so you get
-                    draw(nextVertex);
-                    recursiveDraw(nextVertex);
-                }
-            }
-        })(vertices[0]);
-
-        p.endShape();
-    }
 
     function Shape(args){
         // Recursively create shapes and sub shapes
@@ -398,4 +410,46 @@ function sketchProc(p){
         };
         return legs;
     };
+function vertexShape(_vertices){
+
+            // need to make mutable copy so I can remove elements when processed
+            var vertices = _vertices.slice(0);
+
+            p.beginShape();
+            // draw first point
+            draw(vertices[0]);
+            (function recursiveDraw(vertex){
+             var vertexJoins = vertex.joins;
+             if(vertexJoins.length > 0){
+             // save joins so they can be restored fter cyling through and eliminating
+             // processed joins
+             var vertexJoinsCopy = vertexJoins.slice(0);
+             // cycle through joins of current vertices
+             vertexJoins.forEach(function(element, index, arr){
+                 // if joined vertex has been processed we don't need to do it again
+                 draw(element);
+                 // remove the line we are about to draw
+                 arr.removeAtIndex(index);
+                 // Need to remove vertex from next element so it won't redraw this line
+                    element.joins.remove(vertex);
+                    recursiveDraw(element);
+                });
+                // replace with copy of joins as actual joins have all been removed
+                // during processing
+                vertex.joins = vertexJoinsCopy;
+            }
+            else{
+                vertices.remove(vertex);
+                var nextVertex = vertices.pop();
+                if(nextVertex != undefined){
+                    // draw new vertex so you get
+                    draw(nextVertex);
+                    recursiveDraw(nextVertex);
+                }
+            }
+            })(vertices[0]);
+
+            p.endShape();
+        }
+
 }
