@@ -10,21 +10,21 @@
         var canvas = $("#canvas")[0];
         var sketch = new Processing.Sketch(sketchProc);
         var processingInstance = new Processing(canvas, sketch);
+        WORLD.draw(processingInstance);
+        // setInterval(function(){WORLD.draw(processingInstance);}, 1000);
     });
 </script>
 <link href="css/world.css" type="text/css" rel="stylesheet"></link>
 </head>
 <body>
 <canvas id="canvas"> </canvas>
-<div id="labels" class="controls">
-    <p><label for="size">Size</label></p>
-    <p><label for="position">Position</label></p>
-    <p><label for="color">Color</label></p>
-</div>
-<div id="inputs" class="controls">
-    <p><input type="text" name="size" id="size" placeholder="In pixels"></input></p>
-    <p><input type="text" name="position" id="position" placeholder="In pixels"></input></p>
-    <p><input type="text" name="color" id="color" placeholder="In hex scale"></input></p>
+<div id="controls">
+    <p><div class="labels"><label for="size">Size</label></div>
+    <div class="inputs"><input type="text" name="size" id="size" placeholder="In pixels"></input></div></p><br/>
+    <p><div class="labels"><label for="position">Position</label></div>
+    <div class="inputs"><input type="text" name="position" id="position" placeholder="In pixels"></input></div></p><br/>
+    <p><div class="labels"><label for="color">Color</label></div>
+    <div class="inputs"><input type="text" name="color" id="color" placeholder="In hex scale"></input></div></p><br/>
 </div>
 </body>
 </html>

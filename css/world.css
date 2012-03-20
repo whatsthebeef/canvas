@@ -8,7 +8,16 @@ body{
     margin: 10px;
 }
 
-.controls {
+#control{
+    float: left
+}
+
+.labels{
+    float: left;
+    width: 100px;
+}
+
+.inputs{
     float: left;
     width: 100px;
 }
