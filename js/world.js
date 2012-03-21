@@ -1,12 +1,14 @@
 
 WORLD = (function(){
 
-   var SELECTION_COLOR = 0xFF0000;
+    var SELECTION_COLOR = 0xFF0000;
+
+    var p;
 
     var event;
 
     if (document.createEvent) {
-        event = document.createEvent("UIEvents");
+        event = document.createEvent("Event");
         event.initEvent("shapeselected", true, true);
     } 
     else {
@@ -14,12 +16,13 @@ WORLD = (function(){
         event.eventType = "onshapeselected";
     }
 
-    function fireShapeSelected(){
+    var fireShapeSelected = function(){
         if (document.createEvent) {
-            element.dispatchEvent(event);
+            console.log("Firing event");
+            document.dispatchEvent(event);
         } 
         else {
-            element.fireEvent(event.eventType, event);
+            document.fireEvent(event.eventType, event);
         }
     }
 
@@ -64,8 +67,8 @@ WORLD = (function(){
            },
            currentSelection : function(){
                return selectedObject;
-           }
-       }
+           },
+                }
     })();
 
     return {
@@ -85,6 +88,21 @@ WORLD = (function(){
         },
         objectRegistry : function(){
             return objectRegistry;
+        },
+        getElement : function(id){
+            return document.getElementById(id);
+        }, 
+        addEventListener : function(event, func){
+            document.addEventListener(event, func, false);
+        },
+        updateInputValue : function(inputName, newValue){
+            this.getElement(inputName).value = newValue;
+        },
+        setProcessingInstance : function(processingInstance){
+            p = processingInstance;
+        },
+        processingInstance : function(){
+            return p;
         }
     }
 })();
@@ -106,6 +124,7 @@ function sketchProc(p){
 
     var backgroundColor = 255;
 
+    WORLD.setProcessingInstance(p);
     var shapes = WORLD.shapes();
     var objectRegistry = WORLD.objectRegistry();
 

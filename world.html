@@ -12,6 +12,16 @@
         var processingInstance = new Processing(canvas, sketch);
         WORLD.draw(processingInstance);
         // setInterval(function(){WORLD.draw(processingInstance);}, 1000);
+
+        function updateInputs(){
+            var currentSelection = WORLD.objectRegistry().currentSelection(); 
+            WORLD.updateInputValue("size", currentSelection.size);
+            WORLD.updateInputValue("position", currentSelection.position);
+            WORLD.updateInputValue("color", currentSelection.color);
+        }
+
+        WORLD.addEventListener("shapeselected", updateInputs);
+
     });
 </script>
 <link href="css/world.css" type="text/css" rel="stylesheet"></link>
