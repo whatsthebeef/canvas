@@ -16,7 +16,9 @@
         function updateInputs(){
             var currentSelection = WORLD.objectRegistry().currentSelection(); 
             WORLD.updateInputValue("size", currentSelection.size);
-            WORLD.updateInputValue("position", currentSelection.position);
+            WORLD.updateInputValue("xpos", currentSelection.position.xpos);
+            WORLD.updateInputValue("ypos", currentSelection.position.ypos);
+            WORLD.updateInputValue("zpos", currentSelection.position.zpos);
             WORLD.updateInputValue("color", currentSelection.color);
         }
 
@@ -27,14 +29,21 @@
 <link href="css/world.css" type="text/css" rel="stylesheet"></link>
 </head>
 <body>
-<canvas id="canvas"> </canvas>
-<div id="controls">
-    <p><div class="labels"><label for="size">Size</label></div>
-    <div class="inputs"><input type="text" name="size" id="size" placeholder="In pixels"></input></div></p><br/>
-    <p><div class="labels"><label for="position">Position</label></div>
-    <div class="inputs"><input type="text" name="position" id="position" placeholder="In pixels"></input></div></p><br/>
-    <p><div class="labels"><label for="color">Color</label></div>
-    <div class="inputs"><input type="text" name="color" id="color" placeholder="In hex scale"></input></div></p><br/>
-</div>
+    <canvas id="canvas"> </canvas>
+    <div id="controls">
+        <div class="control">
+            <label for="size">Size</label><input type="text" name="size" id="size" placeholder="In pixels"></input>
+        </div>
+        <div class="control">
+            <label for="xpos">Position</label>
+            <input class="coords" type="text" name="xpos" id="xpos" placeholder="x pos"></input>
+            <input class="coords" type="text" name="ypos" id="ypos" placeholder="y pos"></input>
+            <input class="coords" type="text" name="zpos" id="zpos" placeholder="z pos"></input>
+        </div>
+        <div class="control">
+            <label for="color">Color</label>
+            <input type="text" name="color" id="color" placeholder="In hex scale"></input>
+        <br/>
+    </div>
 </body>
 </html>
