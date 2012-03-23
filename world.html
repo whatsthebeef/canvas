@@ -10,20 +10,55 @@
         var canvas = $("#canvas")[0];
         var sketch = new Processing.Sketch(sketchProc);
         var processingInstance = new Processing(canvas, sketch);
+
         WORLD.draw(processingInstance);
         // setInterval(function(){WORLD.draw(processingInstance);}, 1000);
 
+        var sizeInput = WORLD.getElement("size");
+        var xposInput = WORLD.getElement("xpos");
+        var yposInput = WORLD.getElement("ypos");
+        var zposInput = WORLD.getElement("zpos");
+        var colorInput = WORLD.getElement("color");
+
         function updateInputs(){
-            var currentSelection = WORLD.objectRegistry().currentSelection(); 
-            WORLD.updateInputValue("size", currentSelection.size);
-            WORLD.updateInputValue("xpos", currentSelection.position.xpos);
-            WORLD.updateInputValue("ypos", currentSelection.position.ypos);
-            WORLD.updateInputValue("zpos", currentSelection.position.zpos);
-            WORLD.updateInputValue("color", currentSelection.color);
+            sizeInput.value = WORLD.objectRegistry().currentSelection().size;
+            xposInput.value = WORLD.objectRegistry().currentSelection().position.xpos;
+            yposInput.value = WORLD.objectRegistry().currentSelection().position.ypos;
+            zposInput.value = WORLD.objectRegistry().currentSelection().position.zpos;
+            colorInput.value = WORLD.objectRegistry().currentSelection().originalColor.toString(16);
         }
 
         WORLD.addEventListener("shapeselected", updateInputs);
 
+        function attachTextListener(input, func) {
+          if (window.addEventListener) {
+            input.addEventListener('input', func, false);
+          } else
+            input.attachEvent('onpropertychange', function() {
+              func.call(input);
+            });
+        }
+
+        attachTextListener(sizeInput, function() {
+            WORLD.objectRegistry().currentSelection().size = sizeInput.value;
+            processingInstance.draw();
+        });
+        attachTextListener(xposInput, function() {
+            WORLD.objectRegistry().currentSelection().position.xpos = xposInput.value;
+            processingInstance.draw();
+        });
+        attachTextListener(yposInput, function() {
+            WORLD.objectRegistry().currentSelection().position.ypos = yposInput.value;
+            processingInstance.draw();
+        });
+        attachTextListener(zposInput, function() {
+            WORLD.objectRegistry().currentSelection().position.zpos = zposInput.value;
+            processingInstance.draw();
+        });
+        attachTextListener(colorInput, function() {
+            WORLD.objectRegistry().currentSelection().originalColor = parseInt(colorInput.value, 16);
+            processingInstance.draw();
+        });
     });
 </script>
 <link href="css/world.css" type="text/css" rel="stylesheet"></link>

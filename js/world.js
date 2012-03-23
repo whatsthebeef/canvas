@@ -291,7 +291,9 @@ function sketchProc(p){
         this.function = args.function; 
         this.args = args.args; 
         this.color = args.color; 
-        this.originalColor = args.color; 
+        if(args.color){
+            this.originalColor = args.color; 
+        }
         this.position = args.position; 
         // There shouldn't be any prototype object so don't need to check
         // copy all extras to object so the functions defined can be used directly on the 
@@ -306,7 +308,7 @@ function sketchProc(p){
     Shape.prototype.args = null; 
     Shape.prototype.function  = null; 
     Shape.prototype.color = null; 
-    Shape.prototype.originalColor = null; 
+    Shape.prototype.originalColor = 0xFFFFFF; 
     Shape.prototype.position = null;
     Shape.prototype.shapes = null;
     Shape.prototype.extraArgs = null;
