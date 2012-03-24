@@ -14,6 +14,8 @@
         WORLD.draw(processingInstance);
         // setInterval(function(){WORLD.draw(processingInstance);}, 1000);
 
+        var sizeIncrementInput = WORLD.getElement("size_increment");
+        var sizeDecrementInput = WORLD.getElement("size_decrement");
         var sizeInput = WORLD.getElement("size");
         var xposInput = WORLD.getElement("xpos");
         var yposInput = WORLD.getElement("ypos");
@@ -21,7 +23,7 @@
         var colorInput = WORLD.getElement("color");
 
         function updateInputs(){
-            sizeInput.value = WORLD.objectRegistry().currentSelection().size;
+            sizeInput.value = 5;
             xposInput.value = WORLD.objectRegistry().currentSelection().position.xpos;
             yposInput.value = WORLD.objectRegistry().currentSelection().position.ypos;
             zposInput.value = WORLD.objectRegistry().currentSelection().position.zpos;
@@ -39,10 +41,16 @@
             });
         }
 
-        attachTextListener(sizeInput, function() {
-            WORLD.objectRegistry().currentSelection().size = sizeInput.value;
+        sizeIncrementInput.addEventListener('click', function(){
+            WORLD.objectRegistry().currentSelection().resize(100 + parseInt(sizeInput.value));
             processingInstance.draw();
-        });
+                }, false);
+
+        sizeDecrementInput.addEventListener('click', function(){
+            WORLD.objectRegistry().currentSelection().resize(100 - parseInt(sizeInput.value));
+            processingInstance.draw();
+                }, false);
+
         attachTextListener(xposInput, function() {
             WORLD.objectRegistry().currentSelection().position.xpos = xposInput.value;
             processingInstance.draw();
@@ -67,7 +75,10 @@
     <canvas id="canvas"> </canvas>
     <div id="controls">
         <div class="control">
-            <label for="size">Size</label><input type="text" name="size" id="size" placeholder="In pixels"></input>
+            <label for="size">Size</label>
+            <div class="button" id="size_increment"><div class="inner_button">+</div></div>
+            <div class="button minus" id="size_decrement"><div class="inner_button minus">-</div></div>
+            <input type="text" name="size" id="size" placeholder="Increment by"></input>
         </div>
         <div class="control">
             <label for="xpos">Position</label>

@@ -322,7 +322,19 @@ function sketchProc(p){
     }
     // turns shape in to a string which can be passed about but removes functions and undefineds
     Shape.prototype.stringify = function(){
-        JSON.sringify(this);
+        return JSON.sringify(this);
+    }
+    Shape.prototype.resize = function(percentage){
+        this.args.forEach(function(element, index, arr){
+            if(element instanceof Array){
+                element.forEach(function(element){
+                    exaggerate(element, percentage);
+                });
+            }
+            else{
+                arr[index] = element * (percentage/100);
+            }
+        });
     }
 
     function shape(position, color, drawFunction, args){
@@ -488,3 +500,8 @@ function sketchProc(p){
                 + Math.pow(vertexA.zpos - vertexB.zpos, 2));
     };
 
+    function exaggerate(vertex, percentage){
+        vertex.xpos *= (percentage/100);
+        vertex.ypos *= (percentage/100);
+        vertex.zpos *= (percentage/100);
+    }

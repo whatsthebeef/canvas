@@ -32,3 +32,52 @@ label {
     float: left;
     width: 100px;
 }
+
+.inner_button{
+    margin: 1px 6px 1px 6px;
+}
+
+.minus.inner_button{
+    margin: 1px 8px 1px 8px;
+}
+
+.minus.button{
+    margin-right: 10px;
+}
+.button{
+    margin-right: 2px; 
+    float: left;
+    width: 22px;
+    height: 22px;
+
+    /* forms circle */
+    -webkit-border-radius: 11px;
+    -moz-border-radius: 11px;
+    border-radius: 11px;
+
+    /* background colors */
+    background: -moz-linear-gradient(top, #cedce7 0%, #596a72 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#cedce7), color-stop(100%,#596a72)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top, #cedce7 0%,#596a72 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top, #cedce7 0%,#596a72 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top, #cedce7 0%,#596a72 100%); /* IE10+ */
+    background: linear-gradient(top, #cedce7 0%,#596a72 100%); /* W3C */
+
+    /* text select */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.button:active{
+    /* background colors */
+    background: -moz-linear-gradient(top, #596a72 0%, #596a72 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#596a72), color-stop(100%,#596a72)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top, #596a72 0%,#596a72 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top, #596a72 0%,#596a72 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top, #596a72 0%,#596a72 100%); /* IE10+ */
+    background: linear-gradient(top, #596a72 0%,#596a72 100%); /* W3C */
+}
