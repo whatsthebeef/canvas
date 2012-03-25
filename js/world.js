@@ -1,117 +1,31 @@
 
 WORLD = (function(){
 
-    var SELECTION_COLOR = 0xFF0000;
-
-    var p;
-
-    var event;
-
-    if (document.createEvent) {
-        event = document.createEvent("Event");
-        event.initEvent("shapeselected", true, true);
-    } 
-    else {
-        event = document.createEventObject();
-        event.eventType = "onshapeselected";
-    }
-
-    var fireShapeSelected = function(){
-        if (document.createEvent) {
-            console.log("Firing event");
-            document.dispatchEvent(event);
-        } 
-        else {
-            document.fireEvent(event.eventType, event);
-        }
-    }
-
    var shapes = {}; 
 
-   var objectRegistry = (function(){
-       var drawnObjects = [];
-       var selectedObject = null;
-       var objectSelect = function(object){
-           selectedObject = object;
-           selectedObject.color = SELECTION_COLOR;
-           p.draw();
-       };
+   var objectReg;
 
-       return {
-           add : function(object){
-               drawnObjects.push(object);
-           },
-           remove : function(object){
-               drawnObjects.remove(object);
-           },
-           clear : function(){
-               drawnObjects = [];
-           },
-           select : function(x, y){
-               drawnObjects.forEach(function(element, index, arr){
-                   if(Math.sqrt(Math.pow(element.position.xpos - x, 2)) < 10 &&
-                       Math.sqrt(Math.pow(element.position.ypos - y, 2)) < 10) {
-                       if(selectedObject){
-                           if(selectedObject != element) {
-                               selectedObject.color = selectedObject.originalColor;
-                               objectSelect(element);
-                               fireShapeSelected();
-                           }
-                       }
-                       else {
-                           objectSelect(element);
-                           fireShapeSelected();
-                       }
-                   }
-               });
-           },
-           currentSelection : function(){
-               return selectedObject;
-           },
-                }
-    })();
-
-    return {
-        shapes : function(){
-            return shapes;
-        },
-        setShapes : function(jsonShapes){
-            shapes = {};
-            // Visit non-inherited enumerable keys
-            Object.keys(jsonShapes).forEach(function(key) {
-                shapes[key] = new Shape(jsonShapes[key]);
-            });
-        },
-        draw : function(p){
-            shapes.legs.walk();
-            p.draw();
-        },
-        objectRegistry : function(){
-            return objectRegistry;
-        },
-        getElement : function(id){
-            return document.getElementById(id);
-        }, 
-        addEventListener : function(event, func){
-            document.addEventListener(event, func, false);
-        },
-        updateInputValue : function(inputName, newValue){
-            this.getElement(inputName).value = newValue;
-        },
-        setProcessingInstance : function(processingInstance){
-            p = processingInstance;
-        },
-        processingInstance : function(){
-            return p;
-        }
-    }
-})();
-
-WORLD.setShapes({
-    head : head(300, 100, 0, 20),
-    body : body(300, 140, 0, 40, 40, 20, 80),
-    legs : legs(300, 180, 0, 255),
-    world : world(300, 400, 0, 200, 255)
+   return {
+       shapes : function(){
+           return shapes;
+       },
+       setShapes : function(jsonShapes){
+           shapes = {};
+           // Visit non-inherited enumerable keys
+           Object.keys(jsonShapes).forEach(function(key) {
+               shapes[key] = new Shape(jsonShapes[key], this.objectRegistry());
+           }, this);
+       },
+       objectRegistry : function(){
+           return objectReg;
+       }, 
+       setObjectRegistry : function(reg){
+           objectReg = reg;
+       },
+       draw : function(p){
+           p.draw(this.shapes());
+       } 
+   }
 });
 
 function sketchProc(p){
@@ -124,10 +38,6 @@ function sketchProc(p){
 
     var backgroundColor = 255;
 
-    WORLD.setProcessingInstance(p);
-    var shapes = WORLD.shapes();
-    var objectRegistry = WORLD.objectRegistry();
-
     var pencil = new Pencil();
 
     p.setup = function(){
@@ -135,44 +45,25 @@ function sketchProc(p){
         p.noLoop();
         XPos = 0;
         YPos = 0;
+        ZPos = 0;
     };
 
-    p.draw = function(){
-        p.background(backgroundColor);
-        Object.keys(shapes).forEach(function(key) {
-            pencil.draw(shapes[key]);
-        });
+    p.draw = function(shapes){
+        if(shapes){
+            p.background(backgroundColor);
+            Object.keys(shapes).forEach(function(key) {
+                pencil.draw(shapes[key]);
+            });
+        }
    };
-
-    var monitorMouse = (function(p, objectReg){
-
-        var dragged = false;
-
-        var objectReg = objectReg;
-
-        p.mousePressed = function(){
-            objectReg.select(p.mouseX, p.mouseY);
-        }
-
-        p.mouseDragged = function(){
-            dragged = true;
-        }
-
-        p.mouseReleased = function(){
-            if(dragged){
-                objectReg.currentSelection().position = {xpos:p.mouseX, ypos:p.mouseY, zpos:0};
-                p.draw();
-            }
-            dragged = false;
-        }
-
-    })(p, objectRegistry);
 
    function Pencil(){
 
         var setUp = function(object){
             p.pushMatrix();
-            p.fill(object.color);
+            if(object.color){
+                p.fill(object.color);
+            }
             var position = object.position;
             if(position){
                 positionedTranslate(position.xpos, position.ypos, position.zpos);
@@ -208,8 +99,7 @@ function sketchProc(p){
                 }, this);
             }
             tearDown(object);
-            objectRegistry.add(object);
-        };
+        }
 
         this.sphere = function(radius){
             p.sphere(radius);
@@ -280,13 +170,20 @@ function sketchProc(p){
     /*--------- functions which generate objects which can be passed to Shape -----*/
 
 
-    function Shape(args){
+    function Shape(args, objectRegistry){
+        var parent = args.parent;
         // Recursively create shapes and sub shapes
         if(args.shapes){
             this.shapes = [];
             args.shapes.forEach(function(element, index, arr){
+                    element.parent = this;
                     this.shapes.push(new Shape(element));
                     }, this);
+        }
+        if(!parent){
+            if(objectRegistry){
+                objectRegistry.add(this);
+            }
         }
         this.function = args.function; 
         this.args = args.args; 
@@ -305,6 +202,7 @@ function sketchProc(p){
             }
         }
     }
+
     Shape.prototype.args = null; 
     Shape.prototype.function  = null; 
     Shape.prototype.color = null; 
@@ -315,6 +213,15 @@ function sketchProc(p){
     Shape.prototype.moveVertex = function(vertexIndex, dx, dy, dz){
         this.shapeArgs[vertexIndex].move(dx, dy, dz);
     }
+    Shape.prototype.setXPosition = function(xpos){
+        this.position  = {xpos:xpos, ypos:this.position.ypos, zpos:this.position.zpos};
+    }
+    Shape.prototype.setYPosition = function(ypos){
+        this.position  = {xpos:this.position.xpos, ypos:ypos, zpos:this.position.zpos};
+    }
+    Shape.prototype.setZPosition = function(zpos){
+        this.position  = {xpos:this.position.xpos, ypos:this.position.ypos, zpos:zpos};
+    }
     /* vertex object or index of vertex in vertices can be passed */
     Shape.prototype.rotateVertexX = function(vertex, zenithrad, rotationPoint){
         var rotatingVertex = typeof vertex === "number" ? this.shapeArgs[vertex] : vertex; 
@@ -323,6 +230,9 @@ function sketchProc(p){
     // turns shape in to a string which can be passed about but removes functions and undefineds
     Shape.prototype.stringify = function(){
         return JSON.sringify(this);
+    }
+    Shape.prototype.arrayify = function(){
+        return [this.originalColor];
     }
     Shape.prototype.resize = function(percentage){
         this.args.forEach(function(element, index, arr){
@@ -367,7 +277,7 @@ function sketchProc(p){
         return sphere(position, rsize, color, {});
     };
 
-    function world(xpos, ypos, zpos, rsize, color){
+    function spinningSphere(xpos, ypos, zpos, rsize, color){
         var extraArgs = {
             /*
             hook : function(){
@@ -435,8 +345,8 @@ function sketchProc(p){
 
         // var leftLeg = leg(p.cos(-rotation)*(10), 0, p.sin(-rotation)*(10), color);
         // var rightLeg = leg(p.cos(-rotation)*(-10), 0, p.sin(-rotation)*(-10), color);
-        var leftLeg = leg(10, 0, 0, color);
-        var rightLeg = leg(-10, 0, 0, color);
+        var leftLeg = leg(10, 0, 0);
+        var rightLeg = leg(-10, 0, 0);
 
         var legs = shape(position, color);
         legs.shapes = [leftLeg, rightLeg];
