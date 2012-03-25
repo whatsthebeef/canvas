@@ -30,7 +30,7 @@ input {
 }
 label {
     float: left;
-    width: 100px;
+    width: 120px;
 }
 
 .inner_button{
@@ -44,6 +44,11 @@ label {
 .minus.button{
     margin-right: 10px;
 }
+
+#registry{
+    margin-top: 20px;
+}
+
 .button{
     margin-right: 2px; 
     float: left;

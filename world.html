@@ -14,6 +14,7 @@
         var processingInstance = new Processing(canvas, sketch);
 
         var editor = new WORLD_EDITOR(processingInstance, $); 
+        editor.initMouse();
         var world = new WORLD(); 
 
         world.setObjectRegistry(editor.objectRegistry());
@@ -36,6 +37,10 @@
         var zposInput = $("#zpos");
         var colorInput = $("#color");
 
+        var vxposInput = $("#vxpos");
+        var vyposInput = $("#vypos");
+        var vzposInput = $("#vzpos");
+
         var currentSelection = function(){
             return editor.currentSelection();
         }
@@ -45,11 +50,12 @@
             xposInput.val(currentSelection().position.xpos);
             yposInput.val(currentSelection().position.ypos);
             zposInput.val(currentSelection().position.zpos);
-            colorInput.val(currentSelection().originalColor.toString(16));
+            if(currentSelection().originalColor){
+                colorInput.val(currentSelection().originalColor.toString(16));
+            }
             world.draw(processingInstance);
         }
 
-        jQuery.Event("shapeselected");
         $(document).bind("shapeselected", updateInputs);
 
         sizeIncrementInput.bind("click", function(){
@@ -84,10 +90,24 @@
             currentSelection().originalColor = parseInt(colorInput.val(), 16);
         });
 
-        $("objectRegistry").dataTable({
+        $("#objectRegistry").dataTable({
                 "aaData" : editor.objectRegistry().tableStructure(),
-                "aoColumns" : [{"sTitle":"color"}]
+                "aoColumns" : [{"sTitle":"id"},{"sTitle":"name"},{"sTitle":"color"}],
+                "bPaginate": false,
+                "bLengthChange": true,
+                "bFilter": false,
+                "bSort": false,
+                "bInfo": false,
+                "bAutoWidth": false
                 });
+
+         /* Add events */
+        $("#objectRegistry tbody tr").live("click", function () {
+            var sTitle;
+            var nTds = $('td', this);
+            var sBrowser = $(nTds[1]).text();
+            var sGrade = $(nTds[4]).text();
+        } );
     });
 </script>
 <link href="css/world.css" type="text/css" rel="stylesheet"></link>
@@ -112,7 +132,16 @@
             <label for="color">Color</label>
             <input type="text" name="color" id="color" placeholder="In hex scale"></input>
         </div>
-        <table id="objectRegistry"></table>
-    </div>
+        <div class="control">
+            <label for="xpos">Vertex Position</label>
+            <input class="coords" type="text" name="xpos" id="vxpos" placeholder="x pos"></input>
+            <input class="coords" type="text" name="ypos" id="vypos" placeholder="y pos"></input>
+            <input class="coords" type="text" name="zpos" id="vzpos" placeholder="z pos"></input>
+        </div>
+        <div id="registry">
+            <table id="objectRegistry"></table>
+        </div>
+   </div>
+  
 </body>
 </html>

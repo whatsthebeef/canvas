@@ -1,3 +1,5 @@
+var DEFAULT_COLOR = 0xFFFFFF;
+var GROUP_NAME = "group";
 
 WORLD = (function(){
 
@@ -13,7 +15,7 @@ WORLD = (function(){
            shapes = {};
            // Visit non-inherited enumerable keys
            Object.keys(jsonShapes).forEach(function(key) {
-               shapes[key] = new Shape(jsonShapes[key], this.objectRegistry());
+               shapes[key] = constructShape(jsonShapes[key]);
            }, this);
        },
        objectRegistry : function(){
@@ -89,7 +91,7 @@ function sketchProc(p){
          */
         this.draw = function(object){
             setUp(object);
-            if(object.function){
+            if(object.function && object.function != GROUP_NAME){
                 this[object.function].apply(object, object.args);
             }
             // shape may have sub shapes which is needs to draw as well
@@ -169,40 +171,46 @@ function sketchProc(p){
 
     /*--------- functions which generate objects which can be passed to Shape -----*/
 
-
-    function Shape(args, objectRegistry){
-        var parent = args.parent;
-        // Recursively create shapes and sub shapes
-        if(args.shapes){
-            this.shapes = [];
-            args.shapes.forEach(function(element, index, arr){
-                    element.parent = this;
-                    this.shapes.push(new Shape(element));
-                    }, this);
-        }
-        if(!parent){
-            if(objectRegistry){
-                objectRegistry.add(this);
+    function Shape(args){
+        if(args){
+            // Recursively create shapes and sub shapes
+            if(args.shapes){
+                this.shapes = [];
+                args.shapes.forEach(function(element, index, arr){
+                        element.parent = this;
+                        this.shapes.push(constructShape(element));
+                        }, this);
             }
-        }
-        this.function = args.function; 
-        this.args = args.args; 
-        this.color = args.color; 
-        if(args.color){
-            this.originalColor = args.color; 
-        }
-        this.position = args.position; 
-        // There shouldn't be any prototype object so don't need to check
-        // copy all extras to object so the functions defined can be used directly on the 
-        // objects
-        if(args.extraArgs){
-            var extraArgs = args.extraArgs;
-            for (var key in extraArgs) {
-                this[key] = extraArgs[key];
+            var parent = args.parent;
+            if(!parent){
+                if(objectRegistry){
+                    objectRegistry.add(this);
+                }
+            }
+            this.function = args.function || GROUP_NAME; 
+            this.args = args.args; 
+            this.color = args.color || (function(){if(parent){return parent.color}})() || DEFAULT_COLOR;
+            this.originalColor = this.color; 
+            this.position = args.position; 
+            // There shouldn't be any prototype object so don't need to check
+            // copy all extras to object so the functions defined can be used directly on the 
+            // objects
+            if(args.extraArgs){
+                var extraArgs = args.extraArgs;
+                for (var key in extraArgs) {
+                    this[key] = extraArgs[key];
+                }
+            }
+            if(args.name){
+                this.name = args.name;
+            }
+            else {
+                this.name = this.function + " " + this.color;
             }
         }
     }
-
+    Shape.prototype.id = null;
+    Shape.prototype.name = null;
     Shape.prototype.args = null; 
     Shape.prototype.function  = null; 
     Shape.prototype.color = null; 
@@ -232,7 +240,7 @@ function sketchProc(p){
         return JSON.sringify(this);
     }
     Shape.prototype.arrayify = function(){
-        return [this.originalColor];
+        return [this.id, this.name, this.originalColor];
     }
     Shape.prototype.resize = function(percentage){
         this.args.forEach(function(element, index, arr){
@@ -245,6 +253,24 @@ function sketchProc(p){
                 arr[index] = element * (percentage/100);
             }
         });
+    }
+    VertexShape.prototype = new Shape();
+    function VertexShape(args){
+        Shape.call(this, args);
+        this.selectedVertex = this.args[0][0];
+    }
+    VertexShape.prototype.selectedVertex = null;
+    VertexShape.prototype.selectVertex = function(index){
+        this.selectedVertex = this.args[0][index]
+    };
+
+    function constructShape(args){
+        if(args.function == "vertexShape"){
+            return new VertexShape(args); 
+        }
+        else {
+            return new Shape(args);
+        }
     }
 
     function shape(position, color, drawFunction, args){
