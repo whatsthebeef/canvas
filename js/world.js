@@ -5,8 +5,6 @@ WORLD = (function(){
 
    var shapes = {}; 
 
-   var objectReg;
-
    return {
        shapes : function(){
            return shapes;
@@ -16,13 +14,8 @@ WORLD = (function(){
            // Visit non-inherited enumerable keys
            Object.keys(jsonShapes).forEach(function(key) {
                shapes[key] = constructShape(jsonShapes[key]);
+               shapes[key].name = key;
            }, this);
-       },
-       objectRegistry : function(){
-           return objectReg;
-       }, 
-       setObjectRegistry : function(reg){
-           objectReg = reg;
        },
        draw : function(p){
            p.draw(this.shapes());
@@ -182,11 +175,6 @@ function sketchProc(p){
                         }, this);
             }
             var parent = args.parent;
-            if(!parent){
-                if(objectRegistry){
-                    objectRegistry.add(this);
-                }
-            }
             this.function = args.function || GROUP_NAME; 
             this.args = args.args; 
             this.color = args.color || (function(){if(parent){return parent.color}})() || DEFAULT_COLOR;
@@ -254,6 +242,7 @@ function sketchProc(p){
             }
         });
     }
+
     VertexShape.prototype = new Shape();
     function VertexShape(args){
         Shape.call(this, args);
@@ -262,6 +251,15 @@ function sketchProc(p){
     VertexShape.prototype.selectedVertex = null;
     VertexShape.prototype.selectVertex = function(index){
         this.selectedVertex = this.args[0][index]
+    };
+    VertexShape.prototype.setSelectedVertexXPos = function(xpos){
+        this.selectedVertex.xpos = xpos;
+    };
+    VertexShape.prototype.setSelectedVertexYPos = function(ypos){
+        this.selectedVertex.ypos = ypos;
+    };
+    VertexShape.prototype.setSelectedVertexZPos = function(zpos){
+        this.selectedVertex.zpos = zpos;
     };
 
     function constructShape(args){

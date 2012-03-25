@@ -45,8 +45,16 @@ label {
     margin-right: 10px;
 }
 
-#registry{
+#register{
     margin-top: 20px;
+}
+
+table.dataTable tr.row_selected.odd {
+    background: #888888;
+}
+
+table.dataTable tr.row_selected.even{
+    background: #888888;
 }
 
 .button{

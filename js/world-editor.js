@@ -12,62 +12,73 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
 
     var p = processingInstance;
 
-    var event;
+    var objectRegistry = (function(){
 
-    var shapes = {}; 
+        var drawnObjects = [];
 
-     var objectRegistry = (function(){
+        var selectedObject = null;
 
-       var drawnObjects = [];
-       var selectedObject = null;
-
-       return {
-           objects : function(){
-               return drawnObjects;
-           },
-           getAssignedID : function(){
-               return currentIDAssignment++;
-           },
-           add : function(object){
-               object.id = this.getAssignedID();
-               drawnObjects.push(object);
-           },
-           remove : function(object){
-               drawnObjects.remove(object);
-           },
-           clear : function(){
-               drawnObjects = [];
-           },
-           select : function(objectSelected){
-                selectedObject = objectSelected;
-           },
-           currentSelection : function(){
-               return selectedObject;
-           },
-           tableStructure : function(){
-               var structure = [];
-               drawnObjects.forEach(function(element, index, arr){
-                    structure[index] = element.arrayify();
-                       });
-               return structure; 
-           }
-       }
+        return {
+               objects : function(){
+                   return drawnObjects;
+               },
+               getAssignedID : function(){
+                   return currentIDAssignment++;
+               },
+               add : function(object){
+                   object.id = this.getAssignedID();
+                   drawnObjects.push(object);
+                   var shapes = object.shapes;
+                   if(shapes){
+                       shapes.forEach(function(element){
+                            element.id = this.getAssignedID();
+                            this.add(element);
+                       }, this);
+                   }
+               },
+               remove : function(object){
+                   drawnObjects.remove(object);
+               },
+               clear : function(){
+                   drawnObjects = [];
+               },
+               select : function(objectSelected){
+                    selectedObject = objectSelected;
+               },
+               currentSelection : function(){
+                   return selectedObject;
+               },
+               tableStructure : function(){
+                   var structure = [];
+                   drawnObjects.forEach(function(element, index, arr){
+                        structure[index] = element.arrayify();
+                           });
+                   return structure; 
+               }
+         }
     })();
 
     return {
-        shapes : function(){
-            return shapes;
+        world : function(){
+            return world;
         },
-        setShapes : function(jsonShapes){
-            shapes = {};
-            // Visit non-inherited enumerable keys
-            Object.keys(jsonShapes).forEach(function(key) {
-                shapes[key] = new Shape(jsonShapes[key]);
-            });
+        setWorld : function(newWorld){
+            world = newWorld;
+            if(world){
+               var shapes = world.shapes();
+               Object.keys(shapes).forEach(function(key) {
+                   objectRegistry.add(shapes[key]);
+               });
+            }
+        },
+        shapes : function(){
+            return world.shapes;
+        },
+        setShape : function(jsonShape){
+            world.setShape();
         },
         draw : function(){
-            shapes.legs.walk();
-            p.draw();
+            world.draw(p);
         },
         objectRegistry : function(){
             return objectRegistry;
@@ -77,12 +88,6 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
         },
         drawnObjects : function(){
             return objectRegistry.objects();
-        },
-        getElement : function(id){
-            return document.getElementById(id);
-        }, 
-        addEventListener : function(event, func){
-            document.addEventListener(event, func, false);
         },
         updateInputValue : function(inputName, newValue){
             this.getElement(inputName).value = newValue;
@@ -102,22 +107,34 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
                  }, this);
             }
         },
-        select : function(x, y){
+        selectByMouse : function(x, y){
            this.drawnObjects().forEach(function(element, index, arr){
                if(Math.sqrt(Math.pow(element.position.xpos - x, 2)) < 10 &&
                     Math.sqrt(Math.pow(element.position.ypos - y, 2)) < 10) {
-                    var selectedObject = this.currentSelection();
-                    if(selectedObject){
-                        if(selectedObject != element) {
-                            this.colorShape(selectedObject, selectedObject.originalColor);
-                            this.objectSelect(element);
-                        }
-                    }
-                    else {
-                        this.objectSelect(element);
-                    }
+                    this.select(element);
                 }
             }, this);
+         },
+
+         selectByID : function(id){
+            this.drawnObjects().forEach(function(element, index, arr){
+                if(element.id == id){
+                    this.select(element);
+                }
+            }, this);
+         },
+
+         select : function(shape){
+            var selectedObject = this.currentSelection();
+            if(selectedObject){
+                if(selectedObject != shape) {
+                     this.colorShape(selectedObject, selectedObject.originalColor);
+                     this.objectSelect(shape);
+                }
+             }
+             else {
+                this.objectSelect(shape);
+             }
          },
 
          objectSelect : function(element){
@@ -148,7 +165,7 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
              var objectReg = objectRegistry;
 
              p.mousePressed = function(){
-                 self.select(p.mouseX, p.mouseY);
+                 self.selectByMouse(p.mouseX, p.mouseY);
              }
              p.mouseDragged = function(){
                  dragged = true;

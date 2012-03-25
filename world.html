@@ -13,11 +13,7 @@
         var sketch = new Processing.Sketch(sketchProc);
         var processingInstance = new Processing(canvas, sketch);
 
-        var editor = new WORLD_EDITOR(processingInstance, $); 
-        editor.initMouse();
         var world = new WORLD(); 
-
-        world.setObjectRegistry(editor.objectRegistry());
 
         world.setShapes({
             head : head(300, 100, 0, 20),
@@ -26,7 +22,11 @@
             world : spinningSphere(300, 400, 0, 200, 255)
         });
 
-        world.draw(processingInstance);
+        var editor = new WORLD_EDITOR(processingInstance, $); 
+        editor.setWorld(world);
+        editor.initMouse();
+        editor.draw();
+
         // setInterval(function(){WORLD.draw(processingInstance);}, 1000);
 
         var sizeIncrementInput = $("#size_increment");
@@ -46,12 +46,19 @@
         }
 
         var updateInputs = function(){
+            var cs = currentSelection();
             sizeInput.val(5);
-            xposInput.val(currentSelection().position.xpos);
-            yposInput.val(currentSelection().position.ypos);
-            zposInput.val(currentSelection().position.zpos);
-            if(currentSelection().originalColor){
-                colorInput.val(currentSelection().originalColor.toString(16));
+            xposInput.val(cs.position.xpos);
+            yposInput.val(cs.position.ypos);
+            zposInput.val(cs.position.zpos);
+            if(cs.originalColor){
+                colorInput.val(cs.originalColor.toString(16));
+            }
+            if(cs instanceof VertexShape){
+                var cv = cs.selectedVertex;
+                vxposInput.val(cv.xpos);
+                vyposInput.val(cv.ypos);
+                vzposInput.val(cv.zpos);
             }
             world.draw(processingInstance);
         }
@@ -86,11 +93,20 @@
         attachTextListener(zposInput, function() {
             currentSelection().setZPosition(zposInput.val());
         });
+        attachTextListener(vxposInput, function() {
+            currentSelection().setSelectedVertexXPos(vxposInput.val());
+        });
+        attachTextListener(vyposInput, function() {
+            currentSelection().setSelectedVertexYPos(vyposInput.val());
+        });
+        attachTextListener(vzposInput, function() {
+            currentSelection().setSelectedVertexZPos(vzposInput.val());
+        });
         attachTextListener(colorInput, function() {
             currentSelection().originalColor = parseInt(colorInput.val(), 16);
         });
 
-        $("#objectRegistry").dataTable({
+        var registry = $("#registry").dataTable({
                 "aaData" : editor.objectRegistry().tableStructure(),
                 "aoColumns" : [{"sTitle":"id"},{"sTitle":"name"},{"sTitle":"color"}],
                 "bPaginate": false,
@@ -102,12 +118,24 @@
                 });
 
          /* Add events */
-        $("#objectRegistry tbody tr").live("click", function () {
+        $("#registry tbody tr").live("click", function () {
             var sTitle;
             var nTds = $('td', this);
             var sBrowser = $(nTds[1]).text();
             var sGrade = $(nTds[4]).text();
         } );
+
+        $("#registry tbody tr").click( function( e ) {
+            var nTds = $('td', this);
+            if ( $(this).hasClass('row_selected') ) {
+                $(this).removeClass('row_selected');
+            }
+            else {
+                registry.$('tr.row_selected').removeClass('row_selected');
+                $(this).addClass('row_selected');
+                editor.selectByID(parseInt($(nTds[0]).text()));
+            }
+        });
     });
 </script>
 <link href="css/world.css" type="text/css" rel="stylesheet"></link>
@@ -138,8 +166,8 @@
             <input class="coords" type="text" name="ypos" id="vypos" placeholder="y pos"></input>
             <input class="coords" type="text" name="zpos" id="vzpos" placeholder="z pos"></input>
         </div>
-        <div id="registry">
-            <table id="objectRegistry"></table>
+        <div id="register">
+            <table id="registry"></table>
         </div>
    </div>
   
