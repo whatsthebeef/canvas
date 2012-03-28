@@ -5,6 +5,8 @@ WORLD = (function(){
 
    var shapes = {}; 
 
+   var rotate = 0;
+
    return {
        shapes : function(){
            return shapes;
@@ -19,6 +21,9 @@ WORLD = (function(){
        },
        draw : function(p){
            p.draw(this.shapes());
+       }, 
+       rotate : function(degrees){
+           p.rotate(degrees);
        } 
    }
 });
@@ -29,11 +34,15 @@ function sketchProc(p){
     var YPos = 0.0;
     var ZPos = 0.0;
 
-    var rotation = p.radians(45);
+    var rotation = p.radians(0);
 
     var backgroundColor = 255;
 
     var pencil = new Pencil();
+
+    p.plane= function(degrees){
+        rotation = p.radians(degrees);
+    };
 
     p.setup = function(){
         p.size(600, 400, p.OPENGL);

@@ -65,6 +65,16 @@
 
         $(document).bind("shapeselected", updateInputs);
 
+        $("#planexy").change(function(){
+            editor.xyPlane();
+            editor.draw();
+        });
+
+        $("#planeyz").change(function(){
+            editor.yzPlane();
+            editor.draw();
+        });
+
         sizeIncrementInput.bind("click", function(){
             currentSelection().resize(100 + parseInt(sizeInput.val()));
             world.draw(processingInstance);
@@ -145,6 +155,11 @@
     <canvas id="canvas"> </canvas>
     <div id="controls">
         <div class="control">
+            <label for="plane">Plane</label>
+            <label><input type="radio" name="plane" id="planexy" class="radio" value="xy"></input>xy</label>
+            <label><input type="radio" name="plane" id="planeyz" class="radio" value="yz"></input>yz</label>
+        </div>
+        <div class="control">
             <label for="size">Size</label>
             <div class="button" id="size_increment"><div class="inner_button">+</div></div>
             <div class="button minus" id="size_decrement"><div class="inner_button minus">-</div></div>
@@ -170,6 +185,5 @@
             <table id="registry"></table>
         </div>
    </div>
-  
 </body>
 </html>

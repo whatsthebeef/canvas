@@ -12,7 +12,7 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
 
     var p = processingInstance;
 
-    var objectRegistry = (function(){
+        var objectRegistry = (function(){
 
         var drawnObjects = [];
 
@@ -59,6 +59,15 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
     })();
 
     return {
+        plane : function(degrees){
+            p.rotate(degrees);
+        },
+        xyPlane : function(){
+            p.plane(0);
+        },
+        yzPlane : function(){
+            p.plane(90);
+        },
         world : function(){
             return world;
         },

@@ -13,9 +13,18 @@ body{
     float: left
 }
 
+input {
+    float: left;
+    width: 100px;
+}
+
 input.coords {
     width: 40px;
     margin-right: 10px;
+}
+
+input.radio {
+    width: 10px;
 }
 
 .control {
@@ -24,10 +33,7 @@ input.coords {
     float: left;
 }
 
-input {
-    float: left;
-    width: 100px;
-}
+
 label {
     float: left;
     width: 120px;
