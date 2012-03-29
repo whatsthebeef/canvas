@@ -14,9 +14,12 @@ WORLD = (function(){
        setShapes : function(jsonShapes){
            shapes = {};
            // Visit non-inherited enumerable keys
+           this.addShapes(jsonShapes);
+       },
+       addShapes : function(jsonShapes){
            Object.keys(jsonShapes).forEach(function(key) {
-               shapes[key] = constructShape(jsonShapes[key]);
-               shapes[key].name = key;
+               this.shapes()[key] = constructShape(jsonShapes[key]);
+               this.shapes()[key].name = key;
            }, this);
        },
        draw : function(p){
@@ -259,7 +262,7 @@ function sketchProc(p){
     }
     VertexShape.prototype.selectedVertex = null;
     VertexShape.prototype.selectVertex = function(index){
-        this.selectedVertex = this.args[0][index]
+        this.selectedVertex = this.args[index]
     };
     VertexShape.prototype.setSelectedVertexXPos = function(xpos){
         this.selectedVertex.xpos = xpos;

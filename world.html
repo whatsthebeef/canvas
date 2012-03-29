@@ -46,6 +46,8 @@
         var vyposInput = $("#vypos");
         var vzposInput = $("#vzpos");
 
+        var currentObjectDisplay = $("#current_object");
+
         var currentSelection = function(){
             return editor.currentSelection();
         }
@@ -60,15 +62,17 @@
                 colorInput.val(cs.originalColor.toString(16));
             }
             if(cs instanceof VertexShape){
-                var cv = cs.selectedVertex;
-                vxposInput.val(cv.xpos);
-                vyposInput.val(cv.ypos);
-                vzposInput.val(cv.zpos);
+                updateVertexInputs();
             }
             world.draw(processingInstance);
         }
 
-        $(document).bind("shapeselected", updateInputs);
+        $(document).bind("shapeselected", function(){updateInputs();updateCurrentObject()});
+
+        function updateCurrentObject(){
+            currentObjectDisplay.empty();
+            currentObjectDisplay.append("current object here");
+        }
 
         $("#planexy").change(function(){
             editor.xyPlane();
@@ -194,6 +198,10 @@
             <input class="coords" type="text" name="xpos" id="vxpos" placeholder="x pos"></input>
             <input class="coords" type="text" name="ypos" id="vypos" placeholder="y pos"></input>
             <input class="coords" type="text" name="zpos" id="vzpos" placeholder="z pos"></input>
+        </div>
+        <div class="control">
+            <label for="xpos">Current Object</label>
+            <div id="current_object"></div>
         </div>
         <div id="register">
             <table id="registry"></table>

@@ -12,7 +12,9 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
 
     var p = processingInstance;
 
-        var objectRegistry = (function(){
+    var world = null;
+
+    var objectRegistry = (function(){
 
         var drawnObjects = [];
 
@@ -160,11 +162,12 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
              var currentSelection = this.currentSelection();
              if(currentSelection){
                  // bad way of checking it's a vertex shape
-                 var vertices = currentSelection.args;
+                 var vertices = currentSelection.args[0];
                  if(vertices instanceof Array){
                      currentSelection.selectVertex(index);
-                     $(document).trigger("vertexselected");
+                     world.addShapes({select : sphere({xpos:300,ypos:200,zpos:0}, 0, "sphere", [500])});
                      this.draw();
+                     $(document).trigger("vertexselected");
                  }
              }
          },
