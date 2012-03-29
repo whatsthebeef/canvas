@@ -2,6 +2,7 @@
 <html>
 <head>
 <script src="js/jquery-1.7.1.js"> </script>
+<script src="js/keyboard.0.2.2.min.js"> </script>
 <script src="js/Array+manipulations.js"> </script>
 <script src="js/processing-1.3.6.js"> </script>
 <script src="js/world.js"> </script>
@@ -28,6 +29,10 @@
         editor.draw();
 
         // setInterval(function(){WORLD.draw(processingInstance);}, 1000);
+
+        KeyboardJS.bind.key("N", function(){
+             editor.nextVertex();
+                });
 
         var sizeIncrementInput = $("#size_increment");
         var sizeDecrementInput = $("#size_decrement");
@@ -115,6 +120,15 @@
         attachTextListener(colorInput, function() {
             currentSelection().originalColor = parseInt(colorInput.val(), 16);
         });
+
+        var updateVertexInputs = function(){
+            var cs = currentSelection();
+            vxposInput.val(cs.selectedVertex.xpos);
+            vyposInput.val(cs.selectedVertex.ypos);
+            vzposInput.val(cs.selectedVertex.zpos);
+        }
+
+        $(document).bind("vertexselected", updateVertexInputs);
 
         var registry = $("#registry").dataTable({
                 "aaData" : editor.objectRegistry().tableStructure(),

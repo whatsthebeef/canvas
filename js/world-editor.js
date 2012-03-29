@@ -156,15 +156,24 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
              }
          },
 
-         selectVertex : function(){
+         selectVertex : function(index){
              var currentSelection = this.currentSelection();
              if(currentSelection){
                  // bad way of checking it's a vertex shape
                  var vertices = currentSelection.args;
                  if(vertices instanceof Array){
-                     console.log(vertices[0]);
+                     currentSelection.selectVertex(index);
+                     $(document).trigger("vertexselected");
+                     this.draw();
                  }
              }
+         },
+
+         nextVertex : function(){
+              var vertices = this.currentSelection().args[0];
+              var selectedVertexIndex = vertices.indexOf(this.currentSelection().selectedVertex); 
+              selectedVertexIndex < vertices.length - 1 ? this.selectVertex(++selectedVertexIndex)
+                                             : this.selectVertex(0);
          },
 
          initMouse: function(){
