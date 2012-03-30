@@ -237,7 +237,24 @@ function sketchProc(p){
     }
     // turns shape in to a string which can be passed about but removes functions and undefineds
     Shape.prototype.stringify = function(){
-        return JSON.sringify(this);
+        var str = "";
+        (function innerStringify(object, str){
+            str += "{";
+            for (var p in object) {
+                if (object.hasOwnProperty(p)) {
+                    if(typeof object[p] != "function") {
+                        if(typeof object[p] == "object") {
+                            str += p + ":" + innerStringify(object[p], str) + ",";
+                        }
+                        else {
+                            str += p + ":" + object[p] + ",";
+                        }
+                    }
+                }
+            }
+            str += "}";
+        })(this, str);
+        return str;
     }
     Shape.prototype.arrayify = function(){
         return [this.id, this.name, this.originalColor];

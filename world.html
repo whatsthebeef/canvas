@@ -67,11 +67,14 @@
             world.draw(processingInstance);
         }
 
-        $(document).bind("shapeselected", function(){updateInputs();updateCurrentObject()});
+        $(document).bind("shapeselected", function(){
+                updateInputs();
+                updateCurrentObject()
+                });
 
         function updateCurrentObject(){
             currentObjectDisplay.empty();
-            currentObjectDisplay.append("current object here");
+            currentObjectDisplay.append(currentSelection().stringify());
         }
 
         $("#planexy").change(function(){
@@ -201,6 +204,7 @@
         </div>
         <div class="control">
             <label for="xpos">Current Object</label>
+            <br/>
             <div id="current_object"></div>
         </div>
         <div id="register">
