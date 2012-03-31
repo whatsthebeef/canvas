@@ -18,8 +18,8 @@ WORLD = (function(){
        },
        addShapes : function(jsonShapes){
            Object.keys(jsonShapes).forEach(function(key) {
+               jsonShapes[key].name = key;
                this.shapes()[key] = constructShape(jsonShapes[key]);
-               this.shapes()[key].name = key;
            }, this);
        },
        draw : function(p){
@@ -129,34 +129,43 @@ function sketchProc(p){
             // draw first point
             draw(vertices[0]);
             (function recursiveDraw(vertex){
-             var vertexJoins = vertex.joins;
-             if(vertexJoins.length > 0){
-             // save joins so they can be restored fter cyling through and eliminating
-             // processed joins
-             var vertexJoinsCopy = vertexJoins.slice(0);
-             // cycle through joins of current vertices
-             vertexJoins.forEach(function(element, index, arr){
-                 // if joined vertex has been processed we don't need to do it again
-                 draw(element);
-                 // remove the line we are about to draw
-                 arr.removeAtIndex(index);
-                 // Need to remove vertex from next element so it won't redraw this line
-                    element.joins.remove(vertex);
-                    recursiveDraw(element);
-                });
-                // replace with copy of joins as actual joins have all been removed
-                // during processing
-                vertex.joins = vertexJoinsCopy;
-            }
-            else{
-                vertices.remove(vertex);
-                var nextVertex = vertices.pop();
-                if(nextVertex != undefined){
-                    // draw new vertex so you get
-                    draw(nextVertex);
-                    recursiveDraw(nextVertex);
-                }
-            }
+                 var vertexJoins = vertex.joins;
+                 if(vertexJoins.length > 0){
+                     // save joins so they can be restored after cyling through and eliminating
+                     // processed joins
+                     var vertexJoinsCopy = vertexJoins.slice(0);
+                     // cycle through joins of current vertices
+                     vertexJoins.forEach(function(element, index, arr){
+                         var joinVertex = vertices[element]; 
+                         // if joined vertex has been processed we don"t need to do it again
+                         draw(joinVertex);
+                         // remove the line we are about to draw
+                         arr.removeAtIndex(index);
+                         // Need to remove vertex from next element so it won't redraw this line
+                         joinVertex.joins.remove(vertices.indexOf(vertex));
+                         recursiveDraw(joinVertex);
+                        });
+                    // replace with copy of joins as actual joins have all been removed
+                    // during processing
+                    vertex.joins = vertexJoinsCopy;
+                 }
+                 else {
+                     // no joins and it's been drawn so can be set to null
+                     vertices[vertices.indexOf(vertex)] = -1;
+                     // get next vertices
+                     var i = 0;
+                     var nextVertex = null;
+                     do {
+                        nextVertex = vertices[i++];
+                     }
+                     while(nextVertex == -1 && nextVertex != undefined);
+
+                     if(nextVertex != undefined){
+                         // draw new vertex so you get
+                         draw(nextVertex);
+                         recursiveDraw(nextVertex);
+                     }
+                 }
             })(vertices[0]);
 
             p.endShape();
@@ -178,21 +187,13 @@ function sketchProc(p){
 
     function Shape(args){
         if(args){
-            // Recursively create shapes and sub shapes
-            if(args.shapes){
-                this.shapes = [];
-                args.shapes.forEach(function(element, index, arr){
-                        element.parent = this;
-                        this.shapes.push(constructShape(element));
-                        }, this);
-            }
-            var parent = args.parent;
             this.function = args.function || GROUP_NAME; 
             this.args = args.args; 
-            this.color = args.color || (function(){if(parent){return parent.color}})() || DEFAULT_COLOR;
+            this.color = args.color || DEFAULT_COLOR;
             this.originalColor = this.color; 
             this.position = args.position; 
-            // There shouldn't be any prototype object so don't need to check
+            this.parent = args.parent;
+            // There shouldn"t be any prototype object so don"t need to check
             // copy all extras to object so the functions defined can be used directly on the 
             // objects
             if(args.extraArgs){
@@ -207,9 +208,18 @@ function sketchProc(p){
             else {
                 this.name = this.function + " " + this.color;
             }
+            // Recursively create shapes and sub shapes
+            if(args.shapes){
+                this.shapes = [];
+                args.shapes.forEach(function(element, index, arr){
+                    element.parent = this.name;
+                    this.shapes.push(constructShape(element));
+                }, this);
+            }
         }
     }
     Shape.prototype.id = null;
+    Shape.prototype.parent = null;
     Shape.prototype.name = null;
     Shape.prototype.args = null; 
     Shape.prototype.function  = null; 
@@ -236,25 +246,8 @@ function sketchProc(p){
         rotateX(rotatingVertex, rotationPoint, distanceFrom(rotationPoint, rotatingVertex), zenithrad);
     }
     // turns shape in to a string which can be passed about but removes functions and undefineds
-    Shape.prototype.stringify = function(){
-        var str = "";
-        (function innerStringify(object, str){
-            str += "{";
-            for (var p in object) {
-                if (object.hasOwnProperty(p)) {
-                    if(typeof object[p] != "function") {
-                        if(typeof object[p] == "object") {
-                            str += p + ":" + innerStringify(object[p], str) + ",";
-                        }
-                        else {
-                            str += p + ":" + object[p] + ",";
-                        }
-                    }
-                }
-            }
-            str += "}";
-        })(this, str);
-        return str;
+    Shape.prototype.stringify = function stringify(){
+        return JSON.stringify(this, null, 4);
     }
     Shape.prototype.arrayify = function(){
         return [this.id, this.name, this.originalColor];
@@ -279,7 +272,7 @@ function sketchProc(p){
     }
     VertexShape.prototype.selectedVertex = null;
     VertexShape.prototype.selectVertex = function(index){
-        this.selectedVertex = this.args[index]
+        this.selectedVertex = this.args[0][index];
     };
     VertexShape.prototype.setSelectedVertexXPos = function(xpos){
         this.selectedVertex.xpos = xpos;
@@ -299,139 +292,6 @@ function sketchProc(p){
             return new Shape(args);
         }
     }
-
-    function shape(position, color, drawFunction, args){
-       return { color : color, 
-                position : position, 
-                args : args,
-                function : drawFunction
-       };
-    };
-
-    function sphere(position, rsize, color, extraArgs){
-       var sphere = shape(position, color, "sphere", [rsize]);
-       sphere.extraArgs = extraArgs; 
-       return sphere;
-    };
-
-    function box(position, xsize, ysize, zsize, color, extraArgs){
-       var box = shape(position, color, "box", [xsize, ysize, zsize]);
-       box.extraArgs = extraArgs; 
-       return box;
-    };
-
-    function body(xpos, ypos, zpos, xsize, ysize, zsize, color){
-        var position = {xpos:xpos, ypos:ypos, zpos:zpos};
-        return box(position, xsize, ysize, zsize, color, {});
-    };
-
-    function head(xpos, ypos, zpos, rsize, color){
-        var position = {xpos:xpos, ypos:ypos, zpos:zpos};
-        return sphere(position, rsize, color, {});
-    };
-
-    function spinningSphere(xpos, ypos, zpos, rsize, color){
-        var extraArgs = {
-            /*
-            hook : function(){
-                this.r += 0.01;
-                p.rotateX(p.cos(rotation)*this.r);
-                p.rotateZ(p.sin(rotation)*this.r);
-            }, 
-            hookArgs : [],
-            rotation : 0,
-            r : 0.0
-            */
-        };
-        var position = {xpos:xpos, ypos:ypos, zpos:zpos};
-        return sphere(position, rsize, color, extraArgs);
-    };
-
-    function verticalPyramid(r, l, color, position, extraArgs){
-
-        var point = {xpos:0, ypos:l/2, zpos:0, name:"point"};
-        var b1 = {xpos:+r, ypos:-l/2, zpos:-r, name:"b1"};
-        var b2 = {xpos:+r, ypos:-l/2, zpos:+r, name:"b2"};
-        var b3 = {xpos:-r, ypos:-l/2, zpos:+r, name:"b3"};
-        var b4 = {xpos:-r, ypos:-l/2, zpos:-r, name:"b4"};
-
-        point.joins = [b1, b2, b3, b4];
-        b1.joins = [point, b4, b2];
-        b2.joins = [point, b1, b3];
-        b3.joins = [point, b2, b4];
-        b4.joins = [point, b3, b1];
-
-        extraArgs.rotationPoint  = {xpos:0, ypos:-l/2, zpos:0, name:"rp"};
-
-        extraArgs.rotatePointX = function(zenithrad){
-            this.rotateVertexX(point, zenithrad, this.rotationPoint);
-        };
-
-        var pyramid  = shape(position, color, "vertexShape", [[point, b1, b2, b3, b4]]);
-        pyramid.extraArgs = extraArgs;
-        return pyramid;
-    };    
-  
-    function leg(xpos, ypos, zpos, color){
-        var position = {xpos:xpos, ypos:ypos, zpos:zpos};
-        extraArgs = {
-            steprad : Math.PI/4,
-            step : function(rad){
-                this.rotatePointX(rad);
-            },
-            stepForward : function(){
-                this.step(this.steprad);
-            },
-            stepBack : function(){
-                this.step(-1*this.steprad);
-            },
-            center : function(){
-                this.step(0);
-            },
-            rotation : 0
-        }
-        return verticalPyramid(10, 40, color, position, extraArgs);
-    };
-
-    function legs(xpos, ypos, zpos, color){
-        var position = {xpos:xpos, ypos:ypos, zpos:zpos};
-
-        // var leftLeg = leg(p.cos(-rotation)*(10), 0, p.sin(-rotation)*(10), color);
-        // var rightLeg = leg(p.cos(-rotation)*(-10), 0, p.sin(-rotation)*(-10), color);
-        var leftLeg = leg(10, 0, 0);
-        var rightLeg = leg(-10, 0, 0);
-
-        var legs = shape(position, color);
-        legs.shapes = [leftLeg, rightLeg];
-
-        legs.extraArgs = {
-            RIGHT_FOOT_FORWARD : 0,
-            LEFT_FOOT_FORWARD : 1,
-            state : 0,
-            walk : function() {
-                var leftLeg = this.shapes[0];
-                var rightLeg = this.shapes[1];
-                switch(this.state) {
-                    case this.LEFT_FOOT_FORWARD:
-                        leftLeg.stepBack();
-                        rightLeg.stepForward();
-                        this.state = this.RIGHT_FOOT_FORWARD;
-                        break;
-                    case this.RIGHT_FOOT_FORWARD:
-                        rightLeg.stepBack();
-                        leftLeg.stepForward();
-                        this.state = this.LEFT_FOOT_FORWARD;
-                        break;
-                    default:
-                        leftLeg.stepForward();
-                        rightLeg.stepBack();
-                        this.state = this.LEFT_FOOT_FORWARD;
-                        break;
-                }
-            }
-        };
-        return legs;
-    };
 
     function move(vertex, dx, dy, dz){
         vertex.xpos += dx;
@@ -462,6 +322,11 @@ function sketchProc(p){
         return Math.sqrt(Math.pow(vertexA.xpos - vertexB.xpos, 2) + Math.pow(vertexA.ypos - vertexB.ypos, 2)
                 + Math.pow(vertexA.zpos - vertexB.zpos, 2));
     };
+
+    function addCoords(coordsA, coordsB){
+        return {xpos:coordsA.xpos + coordsB.xpos, ypos:coordsA.ypos 
+            + coordsB.ypos, zpos:coordsA.zpos + coordsB.zpos};
+    }
 
     function exaggerate(vertex, percentage){
         vertex.xpos *= (percentage/100);

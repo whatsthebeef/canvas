@@ -9,30 +9,35 @@
 <script src="js/world-editor.js"> </script>
 <script src="js/jquery.dataTables.min.js"> </script>
 <script>
+
     $(document).ready(function(){
         var canvas = $("#canvas")[0];
         var sketch = new Processing.Sketch(sketchProc);
         var processingInstance = new Processing(canvas, sketch);
 
         var world = new WORLD(); 
+        var editor = new WORLD_EDITOR(processingInstance, $); 
 
-        world.setShapes({
-            head : head(300, 100, 0, 20),
-            body : body(300, 140, 0, 40, 40, 20, 80),
-            legs : legs(300, 180, 0, 105),
-            world : spinningSphere(300, 400, 0, 200, 255)
+        editor.setWorld(world);
+
+        editor.setShapes({
+            head : editor.head(300, 100, 0, 20),
+            body : editor.body(300, 140, 0, 40, 40, 20, 80),
+            legs : editor.legs(300, 180, 0, 105),
+            world : editor.spinningSphere(300, 400, 0, 200, 255)
         });
 
-        var editor = new WORLD_EDITOR(processingInstance, $); 
-        editor.setWorld(world);
         editor.initMouse();
+
+        editor.plane(45);
+
         editor.draw();
 
         // setInterval(function(){WORLD.draw(processingInstance);}, 1000);
 
-        KeyboardJS.bind.key("N", function(){
+        KeyboardJS.bind.key("n", function(){
              editor.nextVertex();
-                });
+        });
 
         var sizeIncrementInput = $("#size_increment");
         var sizeDecrementInput = $("#size_decrement");
@@ -47,8 +52,12 @@
         var vzposInput = $("#vzpos");
 
         var currentObjectDisplay = $("#current_object");
+        var currentVertexDisplay = $("#current_vertex");
 
-        var currentSelection = function(){
+        var createBoxButton = $("#create_box");
+        var createSphereButton = $("#create_sphere");
+
+        function currentSelection(){
             return editor.currentSelection();
         }
 
@@ -61,10 +70,24 @@
             if(cs.originalColor){
                 colorInput.val(cs.originalColor.toString(16));
             }
-            if(cs instanceof VertexShape){
-                updateVertexInputs();
-            }
             world.draw(processingInstance);
+        }
+
+        var updateVertexInputs = function(){
+            var cs = currentSelection();
+            vxposInput.val(cs.selectedVertex.xpos);
+            vyposInput.val(cs.selectedVertex.ypos);
+            vzposInput.val(cs.selectedVertex.zpos);
+        }
+
+        var updateCurrentObject = function(){
+            currentObjectDisplay.empty();
+            currentObjectDisplay.append(currentSelection().stringify());
+        }
+
+        var updateCurrentVertex = function(){
+            currentVertexDisplay.empty();
+            currentVertexDisplay.append(JSON.stringify(currentSelection().selectedVertex, null, 4));
         }
 
         $(document).bind("shapeselected", function(){
@@ -72,10 +95,18 @@
                 updateCurrentObject()
                 });
 
-        function updateCurrentObject(){
-            currentObjectDisplay.empty();
-            currentObjectDisplay.append(currentSelection().stringify());
-        }
+        $(document).bind("vertexselected", function(){
+                updateVertexInputs();
+                updateCurrentVertex()
+                });
+
+        createSphereButton.click(function(){
+            editor.addShape({newSphere: editor.sphere({xpos:0,ypos:0,zpos:0}, 50, 0)});
+        }); 
+
+        createBoxButton.click(function(){
+            editor.addShape({newBox: editor.box({xpos:0,ypos:0,zpos:0}, 50, 0)})
+        }); 
 
         $("#planexy").change(function(){
             editor.xyPlane();
@@ -116,6 +147,7 @@
             currentSelection().setZPosition(zposInput.val());
         });
         attachTextListener(vxposInput, function() {
+            // editor.vertexSelected().xpos = vxposInput.val();
             currentSelection().setSelectedVertexXPos(vxposInput.val());
         });
         attachTextListener(vyposInput, function() {
@@ -127,15 +159,6 @@
         attachTextListener(colorInput, function() {
             currentSelection().originalColor = parseInt(colorInput.val(), 16);
         });
-
-        var updateVertexInputs = function(){
-            var cs = currentSelection();
-            vxposInput.val(cs.selectedVertex.xpos);
-            vyposInput.val(cs.selectedVertex.ypos);
-            vzposInput.val(cs.selectedVertex.zpos);
-        }
-
-        $(document).bind("vertexselected", updateVertexInputs);
 
         var registry = $("#registry").dataTable({
                 "aaData" : editor.objectRegistry().tableStructure(),
@@ -173,6 +196,7 @@
 <link href="css/jquery.dataTables.css" type="text/css" rel="stylesheet"></link>
 </head>
 <body>
+    <div id="editor">
     <canvas id="canvas"> </canvas>
     <div id="controls">
         <div class="control">
@@ -202,14 +226,16 @@
             <input class="coords" type="text" name="ypos" id="vypos" placeholder="y pos"></input>
             <input class="coords" type="text" name="zpos" id="vzpos" placeholder="z pos"></input>
         </div>
-        <div class="control">
-            <label for="xpos">Current Object</label>
-            <br/>
-            <div id="current_object"></div>
-        </div>
         <div id="register">
             <table id="registry"></table>
         </div>
+        <div class="control">
+            <button id="create_box">box</button>
+            <button id="create_sphere">sphere</button>
+        </div>
    </div>
+   </div>
+   <div id="current_object" class="json"></div>
+   <div id="current_vertex" class="json"></div>
 </body>
 </html>
