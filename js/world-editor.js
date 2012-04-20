@@ -25,11 +25,16 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
         return {
            update : function(world){
                if(world){
-                   var shapes = world.shapes();
-                   Object.keys(shapes).forEach(function(key) {
-                       this.add(shapes[key]);
-
-                   }, this);
+                   var worldShapes = world.shapes();
+                   (function recursiveUpdate(shapes, self){
+                       Object.keys(shapes).forEach(function(key) {
+                           var shape = shapes[key];
+                           this.add(shape);
+                           if(shape.shapes){
+                              recursiveUpdate(shape.shapes, self);
+                           }
+                       }, self);
+                   })(worldShapes, this);
                }
            },
            objects : function(){
