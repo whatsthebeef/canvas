@@ -101,11 +101,11 @@
                 });
 
         createSphereButton.click(function(){
-            editor.addShape({newSphere: editor.sphere({xpos:0,ypos:0,zpos:0}, 50, 0)});
+            editor.addShapes({newSphere: editor.sphere({xpos:0,ypos:0,zpos:0}, 50, 0)});
         }); 
 
         createBoxButton.click(function(){
-            editor.addShape({newBox: editor.box({xpos:0,ypos:0,zpos:0}, 50, 0)})
+            editor.addShapes({newBox: editor.box({xpos:0,ypos:0,zpos:0}, 50, 0)})
         }); 
 
         $("#planexy").change(function(){
@@ -162,7 +162,8 @@
 
         var registry = $("#registry").dataTable({
                 "aaData" : editor.objectRegistry().tableStructure(),
-                "aoColumns" : [{"sTitle":"id"},{"sTitle":"name"},{"sTitle":"color"}],
+                "aoColumns" : [{"sTitle":"id"},{"sTitle":"name"},{"sTitle":"xpos"},
+                    {"sTitle":"ypos"},{"sTitle":"zpos"}],
                 "bPaginate": false,
                 "bLengthChange": true,
                 "bFilter": false,

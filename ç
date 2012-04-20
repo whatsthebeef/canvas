@@ -7,8 +7,6 @@ WORLD = (function(){
 
    var rotate = 0;
 
-   var currentIDAssignment = 0;
-
    return {
        shapes : function(){
            return shapes;
@@ -19,26 +17,17 @@ WORLD = (function(){
            this.addShapes(jsonShapes);
        },
        addShapes : function(jsonShapes){
-           (function recursiveAdd(jsonShapes, parent){
-               Object.keys(jsonShapes).forEach(function(key) {
-                    var shape = jsonShapes[key];
-                    shape.name = key;
-                    if(!shape.id){
-                        shape.id = this.getAssignedID();
-                    }
-                    this.shapes()[key] = constructShape(shape);
-               }, this);
-           })(jsonShapes);
+           Object.keys(jsonShapes).forEach(function(key) {
+               jsonShapes[key].name = key;
+               this.shapes()[key] = constructShape(jsonShapes[key]);
+           }, this);
        },
        draw : function(p){
            p.draw(this.shapes());
        }, 
        rotate : function(degrees){
            p.rotate(degrees);
-       }, 
-       getAssignedID : function(){
-           return currentIDAssignment++;
-       }
+       } 
    }
 });
 
@@ -112,8 +101,8 @@ function sketchProc(p){
             }
             // shape may have sub shapes which is needs to draw as well
             if(object.shapes){
-                Object.keys(object.shapes).forEach(function(key){
-                    this.draw(object.shapes[key]);
+                Object.key(shapes).forEach(function(key){
+                    this.draw(shape);
                 }, this);
             }
             tearDown(object);
@@ -203,7 +192,6 @@ function sketchProc(p){
             this.color = args.color || DEFAULT_COLOR;
             this.originalColor = this.color; 
             this.position = args.position; 
-            this.id = args.id; 
             this.parent = args.parent;
             // There shouldn"t be any prototype object so don"t need to check
             // copy all extras to object so the functions defined can be used directly on the 
@@ -222,11 +210,10 @@ function sketchProc(p){
             }
             // Recursively create shapes and sub shapes
             if(args.shapes){
-                this.shapes = {};
-                var subShapes = args.shapes;
-                Object.keys(subShapes).forEach(function(key){
-                    subShapes[key].parent = this.name;
-                    this.shapes[key] = constructShape(subShapes[key]);
+                this.shapes = [];
+                args.shapes.forEach(function(element, index, arr){
+                    element.parent = this.name;
+                    this.shapes.push(constructShape(element));
                 }, this);
             }
         }

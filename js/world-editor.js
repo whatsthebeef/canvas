@@ -40,13 +40,7 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
            objects : function(){
                return drawnObjects;
            },
-           getAssignedID : function(){
-               return currentIDAssignment++;
-           },
            add : function(object){
-               if(!object.id){
-                   object.id = this.getAssignedID();
-               }
                drawnObjects.push(object);
            },
            remove : function(object){
@@ -134,9 +128,10 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
         colorShape : function(object, color){
             object.color = color;
             if(object.shapes){
-                 object.shapes.forEach(function(element){
-                      element.color = object.color;
-                      this.colorShape(element, color)
+                var shapes = object.shapes;
+                 Object.keys(shapes).forEach(function(key){
+                      shapes[key].color = object.color;
+                      this.colorShape(shapes[key], color)
                  }, this);
             }
         },
@@ -162,6 +157,9 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
             if(selectedObject){
                 if(selectedObject != shape) {
                      this.colorShape(selectedObject, selectedObject.originalColor);
+                     if(selectedObject.shapes){
+                        delete selectedObject.shapes["select"]
+                     }
                      this.objectSelect(shape);
                 }
              }
@@ -195,15 +193,20 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
              }
          },
          selectionIndicator : function(vertex){
+             /*
              var position = {xpos:vertex.xpos,ypos:vertex.ypos,zpos:vertex.zpos};
-             // required as child shapes are relative
+             // required because child shapes are relative
              (function absolutePosition(shape){
                 position = addCoords(shape.position, position);
                 if(shape.parent){
                      absolutePosition(world.shapes()[shape.parent]);
                 }
              })(this.currentSelection());
-             world.addShapes({select : this.sphere(position, 10, 0)});
+             var selectionSphere = this.sphere(position, 10, 0);
+             world.addShapes({select : selectionSphere});
+             */
+             var selectSphere = this.sphere(vertex, 10, 0);
+             this.currentSelection().addShape("select", this.sphere(vertex, 10, 0));
          },
 
          nextVertex : function(){
@@ -338,7 +341,7 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
             var rightLeg = this.leg(-10, 0, 0);
 
             var legs = this.shape(position, color);
-            legs.shapes = [leftLeg, rightLeg];
+            legs.shapes = {"leftLeg":leftLeg,"rightLeg":rightLeg};
 
             legs.extraArgs = {
                 RIGHT_FOOT_FORWARD : 0,
