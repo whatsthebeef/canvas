@@ -19,16 +19,25 @@ WORLD = (function(){
            this.addShapes(jsonShapes);
        },
        addShapes : function(jsonShapes){
-           (function recursiveAdd(jsonShapes, parent){
+           (function recursiveAdd(jsonShapes, self, parent){
                Object.keys(jsonShapes).forEach(function(key) {
-                    var shape = jsonShapes[key];
-                    shape.name = key;
-                    if(!shape.id){
-                        shape.id = this.getAssignedID();
+                    var jsonShape = jsonShapes[key];
+                    jsonShape.name = key;
+                    if(!jsonShape.id){
+                        jsonShape.id = self.getAssignedID();
                     }
-                    this.shapes()[key] = constructShape(shape);
-               }, this);
-           })(jsonShapes);
+                    var newShape = constructShape(jsonShape);
+                    if(parent){
+                        parent.addShape(key, newShape);    
+                    }
+                    else {
+                        self.shapes()[key] = newShape;
+                    }
+                    if(jsonShape.shapes){
+                        recursiveAdd(jsonShape.shapes, self, newShape);
+                    }
+               }, self);
+           })(jsonShapes, this, null);
        },
        draw : function(p){
            p.draw(this.shapes());
@@ -221,8 +230,8 @@ function sketchProc(p){
                 this.name = this.function + " " + this.color;
             }
             // Recursively create shapes and sub shapes
-            if(args.shapes){
-                this.shapes = {};
+            this.shapes = {};
+            if(false){
                 var subShapes = args.shapes;
                 Object.keys(subShapes).forEach(function(key){
                     subShapes[key].parent = this.name;

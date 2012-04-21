@@ -29,7 +29,7 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
                    (function recursiveUpdate(shapes, self){
                        Object.keys(shapes).forEach(function(key) {
                            var shape = shapes[key];
-                           this.add(shape);
+                           self.add(shape);
                            if(shape.shapes){
                               recursiveUpdate(shape.shapes, self);
                            }
