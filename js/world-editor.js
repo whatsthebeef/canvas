@@ -26,15 +26,17 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
            update : function(world){
                if(world){
                    var worldShapes = world.shapes();
-                   (function recursiveUpdate(shapes, self){
-                       Object.keys(shapes).forEach(function(key) {
-                           var shape = shapes[key];
-                           self.add(shape);
-                           if(shape.shapes){
-                              recursiveUpdate(shape.shapes, self);
-                           }
-                       }, self);
-                   })(worldShapes, this);
+                   if(worldShapes){
+                       (function recursiveUpdate(shapes, self){
+                           Object.keys(shapes).forEach(function(key) {
+                               var shape = shapes[key];
+                               self.add(shape);
+                               if(shape.shapes){
+                                  recursiveUpdate(shape.shapes, self);
+                               }
+                           }, self);
+                       })(worldShapes, this);
+                   }
                }
            },
            objects : function(){
@@ -72,14 +74,14 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
     })();
 
     return {
-        plane : function(degrees){
-            p.plane(degrees);
+        setRotation : function(degrees){
+            world.setRotation(degrees);
         },
         xyPlane : function(){
-            p.plane(0);
+            this.setRotation(0);
         },
         yzPlane : function(){
-            p.plane(90);
+            this.setRotation(90);
         },
         world : function(){
             return world;
@@ -97,7 +99,7 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
             this.draw();
         },
         setShapes : function(jsonShape){
-            world.setShapes(jsonShape);
+            world.setChildShapes(jsonShape);
             objectRegistry.update(world);
             this.draw();
         },
@@ -370,7 +372,7 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
                 }
             };
             return legs;
-        }
+        },
     };
 });
 

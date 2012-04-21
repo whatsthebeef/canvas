@@ -15,10 +15,10 @@
         var sketch = new Processing.Sketch(sketchProc);
         var processingInstance = new Processing(canvas, sketch);
 
-        var world = new WORLD(); 
+        WORLD.setProcessingInstance(processingInstance);
         var editor = new WORLD_EDITOR(processingInstance, $); 
 
-        editor.setWorld(world);
+        editor.setWorld(WORLD);
 
         editor.setShapes({
             head : editor.head(300, 100, 0, 20),
@@ -29,7 +29,7 @@
 
         editor.initMouse();
 
-        editor.plane(45);
+        editor.setRotation(45);
 
         editor.draw();
 
@@ -70,7 +70,7 @@
             if(cs.originalColor){
                 colorInput.val(cs.originalColor.toString(16));
             }
-            world.draw(processingInstance);
+            editor.draw(processingInstance);
         }
 
         var updateVertexInputs = function(){
@@ -120,19 +120,19 @@
 
         sizeIncrementInput.bind("click", function(){
             currentSelection().resize(100 + parseInt(sizeInput.val()));
-            world.draw(processingInstance);
+            editor.draw(processingInstance);
                 });
 
         sizeDecrementInput.bind("click", function(){
             currentSelection().resize(100 - parseInt(sizeInput.val()));
-            world.draw(processingInstance);
+            editor.draw(processingInstance);
             });
 
         function attachTextListener(input, func) {
             input.bind("change keydown keyup", function(){
                 if(currentSelection){
                     func(input.val());
-                    world.draw(processingInstance);
+                    editor.draw(processingInstance);
                 }
             });
         }
