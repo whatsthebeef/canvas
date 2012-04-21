@@ -102,13 +102,23 @@ WORLD = (function(){
                 arr[index] = element * (percentage/100);
             }
         });
-    }
+    };
+    Shape.prototype.addShapes = function(jsonShapes){
+        if(jsonShapes){
+            Object.keys(jsonShapes).forEach(function(key){
+                jsonShapes[key].parent = this.name;
+                jsonShapes[key].name = key;
+                this.shapes[key] = constructShape(jsonShapes[key]);
+            }, this);
+        }
+    };
     Shape.prototype.addShape = function(name, shape){
-       if(this.shapes == undefined){
-           this.shapes = {};
-       }
-       this.shapes[name] = shape;
-    }
+        if(!this.shape){
+            this.shapes = {}
+        }
+        this.shapes[name] = shape;
+    };
+
 
     VertexShape.prototype = new Shape();
     function VertexShape(args){

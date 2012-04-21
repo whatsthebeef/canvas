@@ -55,6 +55,11 @@ label {
     width: 120px;
 }
 
+label.radio {
+    float: left;
+    width: 40px;
+}
+
 .inner_button{
     margin: 1px 6px 1px 6px;
 }

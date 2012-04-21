@@ -101,11 +101,13 @@
                 });
 
         createSphereButton.click(function(){
-            editor.addShapes({newSphere: editor.sphere({xpos:0,ypos:0,zpos:0}, 50, 0)});
+            editor.addShapes({"newSphere": editor.sphere({xpos:0,ypos:0,zpos:0}, 50, 0)});
+            updateRegistry();
         }); 
 
         createBoxButton.click(function(){
-            editor.addShapes({newBox: editor.box({xpos:0,ypos:0,zpos:0}, 50, 0)})
+            editor.addShapes({"newBox": editor.box({xpos:0,ypos:0,zpos:0}, 50, 0)})
+            updateRegistry();
         }); 
 
         $("#planexy").change(function(){
@@ -115,6 +117,11 @@
 
         $("#planeyz").change(function(){
             editor.yzPlane();
+            editor.draw();
+        });
+
+        $("#45plane").change(function(){
+            editor.setRotation(45);
             editor.draw();
         });
 
@@ -159,38 +166,48 @@
         attachTextListener(colorInput, function() {
             currentSelection().originalColor = parseInt(colorInput.val(), 16);
         });
+        
+        var registry
+        function updateRegistry(){
 
-        var registry = $("#registry").dataTable({
-                "aaData" : editor.objectRegistry().tableStructure(),
-                "aoColumns" : [{"sTitle":"id"},{"sTitle":"name"},{"sTitle":"xpos"},
-                    {"sTitle":"ypos"},{"sTitle":"zpos"}],
-                "bPaginate": false,
-                "bLengthChange": true,
-                "bFilter": false,
-                "bSort": false,
-                "bInfo": false,
-                "bAutoWidth": false
-                });
-
-         /* Add events */
-        $("#registry tbody tr").live("click", function () {
-            var sTitle;
-            var nTds = $('td', this);
-            var sBrowser = $(nTds[1]).text();
-            var sGrade = $(nTds[4]).text();
-        } );
-
-        $("#registry tbody tr").click( function( e ) {
-            var nTds = $('td', this);
-            if ( $(this).hasClass('row_selected') ) {
-                $(this).removeClass('row_selected');
+            if(registry){
+                registry.fnClearTable();
             }
-            else {
-                registry.$('tr.row_selected').removeClass('row_selected');
-                $(this).addClass('row_selected');
-                editor.selectByID(parseInt($(nTds[0]).text()));
-            }
-        });
+
+            registry = $("#registry").dataTable({
+                    "aaData" : editor.objectRegistry().tableStructure(),
+                    "aoColumns" : [{"sTitle":"id"},{"sTitle":"name"},{"sTitle":"xpos"},
+                        {"sTitle":"ypos"},{"sTitle":"zpos"}],
+                    "bPaginate": false,
+                    "bLengthChange": true,
+                    "bFilter": false,
+                    "bSort": false,
+                    "bInfo": false,
+                    "bAutoWidth": false,
+                    "bDestroy" : true
+            });
+
+             /* Add events */
+            $("#registry tbody tr").live("click", function () {
+                var sTitle;
+                var nTds = $('td', this);
+                var sBrowser = $(nTds[1]).text();
+                var sGrade = $(nTds[4]).text();
+            } );
+
+            $("#registry tbody tr").click( function( e ) {
+                var nTds = $('td', this);
+                if ( $(this).hasClass('row_selected') ) {
+                    $(this).removeClass('row_selected');
+                }
+                else {
+                    registry.$('tr.row_selected').removeClass('row_selected');
+                    $(this).addClass('row_selected');
+                    editor.selectByID(parseInt($(nTds[0]).text()));
+                }
+            });
+        };
+        updateRegistry();
     });
 </script>
 <link href="css/world.css" type="text/css" rel="stylesheet"></link>
@@ -202,8 +219,9 @@
     <div id="controls">
         <div class="control">
             <label for="plane">Plane</label>
-            <label><input type="radio" name="plane" id="planexy" class="radio" value="xy"></input>xy</label>
-            <label><input type="radio" name="plane" id="planeyz" class="radio" value="yz"></input>yz</label>
+            <label class="radio"><input type="radio" name="plane" id="planexy" class="radio" value="xy"></input>xy</label>
+            <label class="radio"><input type="radio" name="plane" id="planeyz" class="radio" value="yz"></input>yz</label>
+            <label class="radio"><input type="radio" name="plane" id="45plane" class="radio" value="45"></input>45</label>
         </div>
         <div class="control">
             <label for="size">Size</label>
@@ -227,12 +245,12 @@
             <input class="coords" type="text" name="ypos" id="vypos" placeholder="y pos"></input>
             <input class="coords" type="text" name="zpos" id="vzpos" placeholder="z pos"></input>
         </div>
-        <div id="register">
-            <table id="registry"></table>
-        </div>
         <div class="control">
             <button id="create_box">box</button>
             <button id="create_sphere">sphere</button>
+        </div>
+        <div id="register">
+            <table id="registry"></table>
         </div>
    </div>
    </div>

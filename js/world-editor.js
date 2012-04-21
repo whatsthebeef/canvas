@@ -24,6 +24,7 @@ WORLD_EDITOR = (function(processingInstance, jQuery){
 
         return {
            update : function(world){
+               this.clear();
                if(world){
                    var worldShapes = world.shapes();
                    if(worldShapes){
